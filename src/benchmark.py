@@ -67,7 +67,6 @@ class Benchmarker(object):
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = pipe.communicate()[0].decode().split("\n")
-            print(result)
             text = result[2]
             notebookid = text.split(": ")[1]
 
@@ -155,9 +154,8 @@ class Benchmarker(object):
 if __name__ == '__main__':
 
     # Single user benchmark
-    #Benchmarker("/home/stelios/projects/gdaf-benchmark/mypython/notebooks_parallel.json", "/home/stelios/projects/gdaf-benchmark/mypython/config/").run(concurrent=False, users=1)
+    # Benchmarker("/home/stelios/projects/aglais-testing/config/notebooks/notebooks_quick.json", "/home/stelios/aglais-testing/config/zeppelin/").run(concurrent=False, users=1)
 
     # Multi-user concurrent benchmark
-    Benchmarker("../config/notebooks/notebooks_parallel.json", "../config/zeppelin/").run(concurrent=True, users=3)
-
+    Benchmarker("/home/stelios/projects/aglais-testing/config/notebooks/notebooks_quick.json", "/home/stelios/aglais-testing/config/zeppelin/").run(concurrent=True, users=3)
 
