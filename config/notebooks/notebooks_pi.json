@@ -3,7 +3,7 @@
            {
               "name" : "pi_calculation",
               "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/pi_calculation.json",
-              "totaltime" : 10
+              "totaltime" : 160
            }
 
 ]
