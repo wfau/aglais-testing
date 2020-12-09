@@ -1,0 +1,10 @@
+{
+"notebooks" : [
+           {
+              "name" : "pi_quick",
+              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/pi_quick.json",
+              "totaltime" : 10
+           }
+
+]
+}

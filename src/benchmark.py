@@ -144,7 +144,7 @@ class Benchmarker(object):
             name = notebook["name"]
             generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
             status, totaltime = self.run_notebook(filepath, generated_name, concurrent)
-            if totaltime > expectedtime:
+            if totaltime > expectedtime and status=="SUCCESS":
                 status = "SLOW"
             results[name] = {"totaltime" : totaltime, "status" : status}
 
