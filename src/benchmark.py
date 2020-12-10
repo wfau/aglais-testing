@@ -154,8 +154,7 @@ class Benchmarker(object):
 if __name__ == '__main__':
 
     # Single user benchmark
-    # Benchmarker("/home/stelios/projects/aglais-testing/config/notebooks/notebooks_quick.json", "/home/stelios/aglais-testing/config/zeppelin/").run(concurrent=False, users=1)
+    # Benchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=False, users=1)
 
     # Multi-user concurrent benchmark
-    Benchmarker("/home/stelios/projects/aglais-testing/config/notebooks/notebooks_quick.json", "/home/stelios/aglais-testing/config/zeppelin/").run(concurrent=True, users=3)
-
+    Benchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
