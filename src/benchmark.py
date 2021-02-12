@@ -47,6 +47,7 @@ class Benchmarker(object):
         start = time.time()
         status = "SUCCESS"
         tmpfile = "/tmp/" + name + ".json"
+        output = []
 
         try:
 
@@ -75,6 +76,16 @@ class Benchmarker(object):
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             text = pipe.communicate()[0].decode()
 
+            # Print notebook
+            batcmd="zdairi --config " + config + " notebook print --notebook " + notebookid
+            pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            result = pipe.communicate()[0].decode().split("\n")
+            json_notebook = json.loads("".join(result[2:]))
+
+            for cell in json_notebook["paragraphs"]:
+                if "results" in cell:
+                    output.append(cell["results"]["msg"][0]["data"].strip())
+
             # Delete notebook
             batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
@@ -84,7 +95,7 @@ class Benchmarker(object):
             status = "ERROR"
             logging.exception(e)
         end = time.time()
-        return (status, end-start)
+        return (status, end-start, output)
 
 
     def run(self, concurrent=False, users=1):
@@ -109,7 +120,6 @@ class Benchmarker(object):
         end = time.time()
 
         print ("Test completed after: {} seconds".format(end-start))
-        print (results)
 
         return results
 
@@ -137,17 +147,26 @@ class Benchmarker(object):
         """
 
         results = {}
-
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
             filepath = notebook["filepath"]
             name = notebook["name"]
+            expected_output = notebook["results"]
+            valid = "TRUE"
+
             generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-            status, totaltime = self.run_notebook(filepath, generated_name, concurrent)
+            status, totaltime, output = self.run_notebook(filepath, generated_name, concurrent)
             if totaltime > expectedtime and status=="SUCCESS":
                 status = "SLOW"
-            results[name] = {"totaltime" : totaltime, "status" : status}
 
+            print(output)
+            print(expected_output)
+            for i in range(len(output)):
+                if output[i]!=expected_output[i]:
+                    valid = "FALSE"
+
+            results[name] = {"totaltime" : totaltime, "status" : status, "valid" : valid }
+            
         return results
 
 
