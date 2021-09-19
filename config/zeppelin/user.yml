@@ -1,0 +1,5 @@
+zeppelin_url: http://128.232.227.124:8080
+zeppelin_auth: true
+zeppelin_user: user
+zeppelin_password: pass
+
