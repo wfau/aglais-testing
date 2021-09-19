@@ -1,29 +1,30 @@
 {
 "notebooks" : [
            {
-              "name" : "Good_astrometric_solutions_via_ML_Random_Forrest_classifier",
-              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/Good_astrometric_solutions_via_ML_Random_Forrest_classifier.json",
-              "totaltime" : 900,
-              "results" : []
-           },
-           {
-              "name" : "Mean_proper_motions_over_the_sky",
-              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/Mean_proper_motions_over_the_sky.json",
+              "name" : "SetUp",
+              "filepath" : "https://raw.githubusercontent.com/stvoutsin/aglais-testing/main/notebooks/SetUp.json",
               "totaltime" : 400,
               "results" : []
            },
            {
-              "name" : "Sky_counts_map",
-              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/Sky_counts_map.json",
-              "totaltime" : 1200,
+              "name" : "Mean_proper_motions_over_the_sky",
+              "filepath" : "https://raw.githubusercontent.com/stvoutsin/aglais-testing/main/notebooks/Mean_proper_motions_over_the_sky.json",
+              "totaltime" : 400,
               "results" : []
            },
            {
-              "name" : "pi_calculation",
-              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/pi_calculation.json",
-              "totaltime" : 160,
+              "name" : "Source_counts_over_the_sky.json",
+              "filepath" : "https://raw.githubusercontent.com/stvoutsin/aglais-testing/main/notebooks/Source_counts_over_the_sky.json",
+              "totaltime" : 1200,
               "results" : []
            }
+           {
+              "name" : "Good_astrometric_solutions_via_ML_Random_Forrest_classifier",
+              "filepath" : "https://raw.githubusercontent.com/stvoutsin/aglais-testing/main/notebooks/Good_astrometric_solutions_via_ML_Random_Forrest_classifier.json",
+              "totaltime" : 900,
+              "results" : []
+           }
+
 
 ]
 }
