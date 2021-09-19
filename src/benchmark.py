@@ -45,7 +45,8 @@ class Benchmarker(object):
         """
 
         start = time.time()
-        status = "SUCCESS"
+        status = "ERROR"
+        msg = ""
         tmpfile = "/tmp/" + name + ".json"
         output = []
 
@@ -83,8 +84,14 @@ class Benchmarker(object):
             json_notebook = json.loads("".join(result[2:]))
 
             for cell in json_notebook["paragraphs"]:
-                if "results" in cell:
-                    output.append(cell["results"]["msg"][0]["data"].strip())
+                if len(cell.get("results", []))>0:
+                    status = cell["results"]["code"].upper()
+                    if len(cell["results"].get("msg")) > 0:
+                        result_msg = cell["results"]["msg"][0]["data"].strip()
+                        output.append(result_msg)
+                        if status=="READY" or status=="ERROR":
+                            msg = result_msg
+                            break
 
             # Delete notebook
             batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
@@ -95,7 +102,7 @@ class Benchmarker(object):
             status = "ERROR"
             logging.exception(e)
         end = time.time()
-        return (status, end-start, output)
+        return (status, msg, end-start, output)
 
 
     def run(self, concurrent=False, users=1):
@@ -110,21 +117,21 @@ class Benchmarker(object):
 
         results = []
         if concurrent:
-            results = self.run_parallel(users)
+            results = self._run_parallel(users)
         else:
-            results =  self.run_single()
+            results =  self._run_single()
 
         with open(self.result_file, 'w+') as outfile:
             json.dump(results, outfile)
 
         end = time.time()
-
-        print ("Test completed after: {} seconds".format(end-start))
+        print ("Test completed after: {:.2f} seconds".format(end-start))
+        print("-----------")
 
         return results
 
 
-    def run_parallel(self, concurrent_users):
+    def _run_parallel(self, concurrent_users):
         """
         Run the benchmarks in the given configuration as a parallel test with multiple concurrent users
         :type concurrent_users: int
@@ -132,13 +139,13 @@ class Benchmarker(object):
         """
 
         with Pool(processes=concurrent_users) as pool:
-            results = pool.map(self.run_single, range(concurrent_users), True)
+            results = pool.map(self._run_single, range(concurrent_users), True)
         pool.close()
         pool.join()
         return results
 
 
-    def run_single(self, iterable=0, concurrent=False):
+    def _run_single(self, iterable=0, concurrent=False):
         """
         Run a single instance of the benchmark test
         :type iterable: int
@@ -153,20 +160,29 @@ class Benchmarker(object):
             name = notebook["name"]
             expected_output = notebook["results"]
             valid = "TRUE"
+            msg = ""
+            try:
 
-            generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-            status, totaltime, output = self.run_notebook(filepath, generated_name, concurrent)
-            if totaltime > expectedtime and status=="SUCCESS":
-                status = "SLOW"
+                generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+                status, msg, totaltime, output = self.run_notebook(filepath, generated_name, concurrent)
+                if totaltime > expectedtime and status=="SUCCESS":
+                    status = "SLOW"
 
-            print(output)
-            print(expected_output)
-            for i in range(len(output)):
-                if output[i]!=expected_output[i]:
-                    valid = "FALSE"
+                if len(expected_output) == len(output):
+                    print("Expected Output: " + str(expected_output))
+                    print("Actual output: " + str(output))
+                    print("-----------")
 
-            results[name] = {"totaltime" : totaltime, "status" : status, "valid" : valid }
-            
+                    for i in range(len(output)):
+                        if output[i]!=expected_output[i]:
+                            valid = "FALSE"
+
+                results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
+
+            except Exception as e:
+                logging.exception(e)
+                results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
+
         return results
 
 
