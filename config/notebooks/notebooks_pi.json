@@ -2,7 +2,7 @@
 "notebooks" : [
            {
               "name" : "pi_calculation",
-              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/pi_calculation.json",
+              "filepath" : "https://raw.githubusercontent.com/stvoutsin/aglais-testing/main/notebooks/pi_calculation.json",
               "totaltime" : 160,
               "results" :  [ "Pi is roughly 3.141854"]
 
