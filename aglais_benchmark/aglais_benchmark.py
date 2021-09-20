@@ -76,7 +76,7 @@ class AglaisBenchmarker(object):
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = pipe.communicate()[0].decode().split("\n")
-            text = result[0]
+            text = result[-2]
             notebookid = text.split(": ")[1]
 
             # Run notebook
@@ -88,7 +88,7 @@ class AglaisBenchmarker(object):
             batcmd="zdairi --config " + config + " notebook print --notebook " + notebookid
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = pipe.communicate()[0].decode().split("\n")
-            json_notebook = json.loads("".join(result[0:]))
+            json_notebook = json.loads("".join(result[2:]))
 
             for cell in json_notebook["paragraphs"]:
                 if len(cell.get("results", []))>0:
