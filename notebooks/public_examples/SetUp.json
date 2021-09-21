@@ -1,0 +1,291 @@
+{
+"paragraphs": [
+{
+"text": "%md\n\n# Platform set-up following Spark restart \n\n(or to set up the platform environment in any new Spark context).\n\nProbably will be needed as part of the curated set of example notebooks if we advise Spark restarts as a pre-requisite to using the system.\n\nNotes and useful links:\n- SQL syntax: https://spark.apache.org/docs/3.0.0/sql-ref.html (undocumented at 2.4.7, so have to use more recent documentation - CAUTION do not navigate to other aspects of the API from here!) ",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:15:58.422",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "markdown",
+"editOnDblClick": true,
+"completionKey": "TAB",
+"completionSupport": false
+},
+"editorMode": "ace/mode/markdown",
+"editorHide": true,
+"tableHide": false
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": [
+{
+"type": "HTML",
+"data": "<div class=\"markdown-body\">\n<h1>Platform set-up following Spark restart</h1>\n<p>(or to set up the platform environment in any new Spark context).</p>\n<p>Probably will be needed as part of the curated set of example notebooks if we advise Spark restarts as a pre-requisite to using the system.</p>\n<p>Notes and useful links:<br/>- SQL syntax: <a href=\"https://spark.apache.org/docs/3.0.0/sql-ref.html\">https://spark.apache.org/docs/3.0.0/sql-ref.html</a> (undocumented at 2.4.7, so have to use more recent documentation - CAUTION do not navigate to other aspects of the API from here!)</p>\n</div>"
+}
+]
+},
+"apps": [],
+"jobName": "paragraph_1620133757150_226608039",
+"id": "20210504-130917_57061499",
+"dateCreated": "2021-05-04 13:09:17.150",
+"dateStarted": "2021-08-26 13:15:58.436",
+"dateFinished": "2021-08-26 13:15:58.443",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+},
+{
+"title": "Catalogue structure definitions",
+"text": "%pyspark\n\n# schemas defined from WFAU MS SQL schema files, excluding the spatial indexing attributes (which are not included in the original CSVs distributed by the respective Data Centres of course)\n\nfrom pyspark.sql.types import *\n\ngaia_source_schema = StructType([\n    StructField('solution_id', LongType(), True),\n    StructField('designation', StringType(), True),\n    StructField('source_id', LongType(), True),\n    StructField('random_index', LongType(), True),\n    StructField('ref_epoch', FloatType(), True),\n    StructField('ra', DoubleType(), True),\n    StructField('ra_error', DoubleType(), True),\n    StructField('dec', DoubleType(), True),\n    StructField('dec_error', DoubleType(), True),\n    StructField('parallax', DoubleType(), True),\n    StructField('parallax_error', DoubleType(), True),\n    StructField('parallax_over_error', FloatType(), True),\n    StructField('pm', FloatType(), True),\n    StructField('pmra', DoubleType(), True),\n    StructField('pmra_error', FloatType(), True),\n    StructField('pmdec', DoubleType(), True),\n    StructField('pmdec_error', FloatType(), True),\n    StructField('ra_dec_corr', FloatType(), True),\n    StructField('ra_parallax_corr', FloatType(), True),\n    StructField('ra_pmra_corr', FloatType(), True),\n    StructField('ra_pmdec_corr', FloatType(), True),\n    StructField('dec_parallax_corr', FloatType(), True),\n    StructField('dec_pmra_corr', FloatType(), True),\n    StructField('dec_pmdec_corr', FloatType(), True),\n    StructField('parallax_pmra_corr', FloatType(), True),\n    StructField('parallax_pmdec_corr', FloatType(), True),\n    StructField('pmra_pmdec_corr', FloatType(), True),\n    StructField('astrometric_n_obs_al', ShortType(), True),\n    StructField('astrometric_n_obs_ac', ShortType(), True),\n    StructField('astrometric_n_good_obs_al', ShortType(), True),\n    StructField('astrometric_n_bad_obs_al', ShortType(), True),\n    StructField('astrometric_gof_al', FloatType(), True),\n    StructField('astrometric_chi2_al', FloatType(), True),\n    StructField('astrometric_excess_noise', FloatType(), True),\n    StructField('astrometric_excess_noise_sig', FloatType(), True),\n    StructField('astrometric_params_solved', ShortType(), True),\n    StructField('astrometric_primary_flag', BooleanType(), True),\n    StructField('nu_eff_used_in_astrometry', FloatType(), True),\n    StructField('pseudocolour', FloatType(), True),\n    StructField('pseudocolour_error', FloatType(), True),\n    StructField('ra_pseudocolour_corr', FloatType(), True),\n    StructField('dec_pseudocolour_corr', FloatType(), True),\n    StructField('parallax_pseudocolour_corr', FloatType(), True),\n    StructField('pmra_pseudocolour_corr', FloatType(), True),\n    StructField('pmdec_pseudocolour_corr', FloatType(), True),\n    StructField('astrometric_matched_transits', ShortType(), True),\n    StructField('visibility_periods_used', ShortType(), True),\n    StructField('astrometric_sigma5d_max', FloatType(), True),\n    StructField('matched_transits', ShortType(), True),\n    StructField('new_matched_transits', ShortType(), True),\n    StructField('matched_transits_removed', ShortType(), True),\n    StructField('ipd_gof_harmonic_amplitude', FloatType(), True),\n    StructField('ipd_gof_harmonic_phase', FloatType(), True),\n    StructField('ipd_frac_multi_peak', ShortType(), True),\n    StructField('ipd_frac_odd_win', ShortType(), True),\n    StructField('ruwe', FloatType(), True),\n    StructField('scan_direction_strength_k1', FloatType(), True),\n    StructField('scan_direction_strength_k2', FloatType(), True),\n    StructField('scan_direction_strength_k3', FloatType(), True),\n    StructField('scan_direction_strength_k4', FloatType(), True),\n    StructField('scan_direction_mean_k1', FloatType(), True),\n    StructField('scan_direction_mean_k2', FloatType(), True),\n    StructField('scan_direction_mean_k3', FloatType(), True),\n    StructField('scan_direction_mean_k4', FloatType(), True),\n    StructField('duplicated_source', BooleanType(), True),\n    StructField('phot_g_n_obs', ShortType(), True),\n    StructField('phot_g_mean_flux', DoubleType(), True),\n    StructField('phot_g_mean_flux_error', FloatType(), True),\n    StructField('phot_g_mean_flux_over_error', FloatType(), True),\n    StructField('phot_g_mean_mag', FloatType(), True),\n    StructField('phot_bp_n_obs', ShortType(), True),\n    StructField('phot_bp_mean_flux', DoubleType(), True),\n    StructField('phot_bp_mean_flux_error', FloatType(), True),\n    StructField('phot_bp_mean_flux_over_error', FloatType(), True),\n    StructField('phot_bp_mean_mag', FloatType(), True),\n    StructField('phot_rp_n_obs', ShortType(), True),\n    StructField('phot_rp_mean_flux', DoubleType(), True),\n    StructField('phot_rp_mean_flux_error', FloatType(), True),\n    StructField('phot_rp_mean_flux_over_error', FloatType(), True),\n    StructField('phot_rp_mean_mag', FloatType(), True),\n    StructField('phot_bp_n_contaminated_transits', ShortType(), True),\n    StructField('phot_bp_n_blended_transits', ShortType(), True),\n    StructField('phot_rp_n_contaminated_transits', ShortType(), True),\n    StructField('phot_rp_n_blended_transits', ShortType(), True),\n    StructField('phot_proc_mode', ShortType(), True),\n    StructField('phot_bp_rp_excess_factor', FloatType(), True),\n    StructField('bp_rp', FloatType(), True),\n    StructField('bp_g', FloatType(), True),\n    StructField('g_rp', FloatType(), True),\n    StructField('dr2_radial_velocity', FloatType(), True),\n    StructField('dr2_radial_velocity_error', FloatType(), True),\n    StructField('dr2_rv_nb_transits', ShortType(), True),\n    StructField('dr2_rv_template_teff', FloatType(), True),\n    StructField('dr2_rv_template_logg', FloatType(), True),\n    StructField('dr2_rv_template_fe_h', FloatType(), True),\n    StructField('l', DoubleType(), True),\n    StructField('b', DoubleType(), True),\n    StructField('ecl_lon', DoubleType(), True),\n    StructField('ecl_lat', DoubleType(), True),\n])\n\ntwomass_psc_schema = StructType([\n    StructField('ra', DoubleType(), True),\n    StructField('dec', DoubleType(), True),\n    StructField('err_maj', FloatType(), True),\n    StructField('err_min', FloatType(), True),\n    StructField('err_ang', ShortType(), True),\n    StructField('designation', StringType(), True),\n    StructField('j_m', FloatType(), True),\n    StructField('j_cmsig', FloatType(), True),\n    StructField('j_msigcom', FloatType(), True),\n    StructField('j_snr', FloatType(), True),\n    StructField('h_m', FloatType(), True),\n    StructField('h_cmsig', FloatType(), True),\n    StructField('h_msigcom', FloatType(), True),\n    StructField('h_snr', FloatType(), True),\n    StructField('k_m', FloatType(), True),\n    StructField('k_cmsig', FloatType(), True),\n    StructField('k_msigcom', FloatType(), True),\n    StructField('k_snr', FloatType(), True),\n    StructField('ph_qual', StringType(), True),\n    StructField('rd_flg', StringType(), True),\n    StructField('bl_flg', StringType(), True),\n    StructField('cc_flg', StringType(), True),\n    StructField('ndet', StringType(), True),\n    StructField('prox', FloatType(), True),\n    StructField('pxpa', ShortType(), True),\n    StructField('pxcntr', IntegerType(), True),\n    StructField('gal_contam', ShortType(), True),\n    StructField('mp_flg', ShortType(), True),\n    StructField('pts_key', IntegerType(), True),\n    StructField('hemis', StringType(), True),\n    StructField('date', DateType(), True),\n    StructField('scan', ShortType(), True),\n    StructField('glon', FloatType(), True),\n    StructField('glat', FloatType(), True),\n    StructField('x_scan', FloatType(), True),\n    StructField('jdate', DoubleType(), True),\n    StructField('j_psfchi', FloatType(), True),\n    StructField('h_psfchi', FloatType(), True),\n    StructField('k_psfchi', FloatType(), True),\n    StructField('j_m_stdap', FloatType(), True),\n    StructField('j_msig_stdap', FloatType(), True),\n    StructField('h_m_stdap', FloatType(), True),\n    StructField('h_msig_stdap', FloatType(), True),\n    StructField('k_m_stdap', FloatType(), True),\n    StructField('k_msig_stdap', FloatType(), True),\n    StructField('dist_edge_ns', IntegerType(), True),\n    StructField('dist_edge_ew', IntegerType(), True),\n    StructField('dist_edge_flg', StringType(), True),\n    StructField('dup_src', ShortType(), True),\n    StructField('use_src', ShortType(), True),\n    StructField('a', StringType(), True),\n    StructField('dist_opt', FloatType(), True),\n    StructField('phi_opt', ShortType(), True),\n    StructField('b_m_opt', FloatType(), True),\n    StructField('vr_m_opt', FloatType(), True),\n    StructField('nopt_mchs', ShortType(), True),\n    StructField('ext_key', IntegerType(), True),\n    StructField('scan_key', IntegerType(), True),\n    StructField('coadd_key', IntegerType(), True),\n    StructField('coadd', ShortType(), True),\n])\n\nallwise_sc_schema = StructType([\n    StructField('designation', StringType(), True),\n    StructField('ra', DoubleType(), True),\n    StructField('dec', DoubleType(), True),\n    StructField('sigra', DoubleType(), True),\n    StructField('sigdec', DoubleType(), True),\n    StructField('sigradec', DoubleType(), True),\n    StructField('glon', DoubleType(), True),\n    StructField('glat', DoubleType(), True),\n    StructField('elon', DoubleType(), True),\n    StructField('elat', DoubleType(), True),\n    StructField('wx', DoubleType(), True),\n    StructField('wy', DoubleType(), True),\n    StructField('cntr', LongType(), True),\n    StructField('src_id', StringType(), True),\n    StructField('coadd_id', StringType(), True),\n    StructField('src', IntegerType(), True),\n    StructField('w1mpro', DoubleType(), True),\n    StructField('w1sigmpro', DoubleType(), True),\n    StructField('w1snr', DoubleType(), True),\n    StructField('w1rchi2', FloatType(), True),\n    StructField('w2mpro', DoubleType(), True),\n    StructField('w2sigmpro', DoubleType(), True),\n    StructField('w2snr', DoubleType(), True),\n    StructField('w2rchi2', FloatType(), True),\n    StructField('w3mpro', DoubleType(), True),\n    StructField('w3sigmpro', DoubleType(), True),\n    StructField('w3snr', DoubleType(), True),\n    StructField('w3rchi2', FloatType(), True),\n    StructField('w4mpro', DoubleType(), True),\n    StructField('w4sigmpro', DoubleType(), True),\n    StructField('w4snr', DoubleType(), True),\n    StructField('w4rchi2', FloatType(), True),\n    StructField('rchi2', FloatType(), True),\n    StructField('nb', IntegerType(), True),\n    StructField('na', IntegerType(), True),\n    StructField('w1sat', DoubleType(), True),\n    StructField('w2sat', DoubleType(), True),\n    StructField('w3sat', DoubleType(), True),\n    StructField('w4sat', DoubleType(), True),\n    StructField('satnum', StringType(), True),\n    StructField('ra_pm', DoubleType(), True),\n    StructField('dec_pm', DoubleType(), True),\n    StructField('sigra_pm', DoubleType(), True),\n    StructField('sigdec_pm', DoubleType(), True),\n    StructField('sigradec_pm', DoubleType(), True),\n    StructField('pmra', IntegerType(), True),\n    StructField('sigpmra', IntegerType(), True),\n    StructField('pmdec', IntegerType(), True),\n    StructField('sigpmdec', IntegerType(), True),\n    StructField('w1rchi2_pm', FloatType(), True),\n    StructField('w2rchi2_pm', FloatType(), True),\n    StructField('w3rchi2_pm', FloatType(), True),\n    StructField('w4rchi2_pm', FloatType(), True),\n    StructField('rchi2_pm', FloatType(), True),\n    StructField('pmcode', StringType(), True),\n    StructField('cc_flags', StringType(), True),\n    StructField('rel', StringType(), True),\n    StructField('ext_flg', IntegerType(), True),\n    StructField('var_flg', StringType(), True),\n    StructField('ph_qual', StringType(), True),\n    StructField('det_bit', IntegerType(), True),\n    StructField('moon_lev', StringType(), True),\n    StructField('w1nm', IntegerType(), True),\n    StructField('w1m', IntegerType(), True),\n    StructField('w2nm', IntegerType(), True),\n    StructField('w2m', IntegerType(), True),\n    StructField('w3nm', IntegerType(), True),\n    StructField('w3m', IntegerType(), True),\n    StructField('w4nm', IntegerType(), True),\n    StructField('w4m', IntegerType(), True),\n    StructField('w1cov', DoubleType(), True),\n    StructField('w2cov', DoubleType(), True),\n    StructField('w3cov', DoubleType(), True),\n    StructField('w4cov', DoubleType(), True),\n    StructField('w1cc_map', IntegerType(), True),\n    StructField('w1cc_map_str', StringType(), True),\n    StructField('w2cc_map', IntegerType(), True),\n    StructField('w2cc_map_str', StringType(), True),\n    StructField('w3cc_map', IntegerType(), True),\n    StructField('w3cc_map_str', StringType(), True),\n    StructField('w4cc_map', IntegerType(), True),\n    StructField('w4cc_map_str', StringType(), True),\n    StructField('best_use_cntr', LongType(), True),\n    StructField('ngrp', ShortType(), True),\n    StructField('w1flux', FloatType(), True),\n    StructField('w1sigflux', FloatType(), True),\n    StructField('w1sky', DoubleType(), True),\n    StructField('w1sigsk', DoubleType(), True),\n    StructField('w1conf', DoubleType(), True),\n    StructField('w2flux', FloatType(), True),\n    StructField('w2sigflux', FloatType(), True),\n    StructField('w2sky', DoubleType(), True),\n    StructField('w2sigsk', DoubleType(), True),\n    StructField('w2conf', DoubleType(), True),\n    StructField('w3flux', FloatType(), True),\n    StructField('w3sigflux', FloatType(), True),\n    StructField('w3sky', DoubleType(), True),\n    StructField('w3sigsk', DoubleType(), True),\n    StructField('w3conf', DoubleType(), True),\n    StructField('w4flux', FloatType(), True),\n    StructField('w4sigflux', FloatType(), True),\n    StructField('w4sky', DoubleType(), True),\n    StructField('w4sigsk', DoubleType(), True),\n    StructField('w4conf', DoubleType(), True),\n    StructField('w1mag', DoubleType(), True),\n    StructField('w1sigm', DoubleType(), True),\n    StructField('w1flg', IntegerType(), True),\n    StructField('w1mcor', DoubleType(), True),\n    StructField('w2mag', DoubleType(), True),\n    StructField('w2sigm', DoubleType(), True),\n    StructField('w2flg', IntegerType(), True),\n    StructField('w2mcor', DoubleType(), True),\n    StructField('w3mag', DoubleType(), True),\n    StructField('w3sigm', DoubleType(), True),\n    StructField('w3flg', IntegerType(), True),\n    StructField('w3mcor', DoubleType(), True),\n    StructField('w4mag', DoubleType(), True),\n    StructField('w4sigm', DoubleType(), True),\n    StructField('w4flg', IntegerType(), True),\n    StructField('w4mcor', DoubleType(), True),\n    StructField('w1mag_1', DoubleType(), True),\n    StructField('w1sigm_1', DoubleType(), True),\n    StructField('w1flg_1', IntegerType(), True),\n    StructField('w2mag_1', DoubleType(), True),\n    StructField('w2sigm_1', DoubleType(), True),\n    StructField('w2flg_1', IntegerType(), True),\n    StructField('w3mag_1', DoubleType(), True),\n    StructField('w3sigm_1', DoubleType(), True),\n    StructField('w3flg_1', IntegerType(), True),\n    StructField('w4mag_1', DoubleType(), True),\n    StructField('w4sigm_1', DoubleType(), True),\n    StructField('w4flg_1', IntegerType(), True),\n    StructField('w1mag_2', DoubleType(), True),\n    StructField('w1sigm_2', DoubleType(), True),\n    StructField('w1flg_2', IntegerType(), True),\n    StructField('w2mag_2', DoubleType(), True),\n    StructField('w2sigm_2', DoubleType(), True),\n    StructField('w2flg_2', IntegerType(), True),\n    StructField('w3mag_2', DoubleType(), True),\n    StructField('w3sigm_2', DoubleType(), True),\n    StructField('w3flg_2', IntegerType(), True),\n    StructField('w4mag_2', DoubleType(), True),\n    StructField('w4sigm_2', DoubleType(), True),\n    StructField('w4flg_2', IntegerType(), True),\n    StructField('w1mag_3', DoubleType(), True),\n    StructField('w1sigm_3', DoubleType(), True),\n    StructField('w1flg_3', IntegerType(), True),\n    StructField('w2mag_3', DoubleType(), True),\n    StructField('w2sigm_3', DoubleType(), True),\n    StructField('w2flg_3', IntegerType(), True),\n    StructField('w3mag_3', DoubleType(), True),\n    StructField('w3sigm_3', DoubleType(), True),\n    StructField('w3flg_3', IntegerType(), True),\n    StructField('w4mag_3', DoubleType(), True),\n    StructField('w4sigm_3', DoubleType(), True),\n    StructField('w4flg_3', IntegerType(), True),\n    StructField('w1mag_4', DoubleType(), True),\n    StructField('w1sigm_4', DoubleType(), True),\n    StructField('w1flg_4', IntegerType(), True),\n    StructField('w2mag_4', DoubleType(), True),\n    StructField('w2sigm_4', DoubleType(), True),\n    StructField('w2flg_4', IntegerType(), True),\n    StructField('w3mag_4', DoubleType(), True),\n    StructField('w3sigm_4', DoubleType(), True),\n    StructField('w3flg_4', IntegerType(), True),\n    StructField('w4mag_4', DoubleType(), True),\n    StructField('w4sigm_4', DoubleType(), True),\n    StructField('w4flg_4', IntegerType(), True),\n    StructField('w1mag_5', DoubleType(), True),\n    StructField('w1sigm_5', DoubleType(), True),\n    StructField('w1flg_5', IntegerType(), True),\n    StructField('w2mag_5', DoubleType(), True),\n    StructField('w2sigm_5', DoubleType(), True),\n    StructField('w2flg_5', IntegerType(), True),\n    StructField('w3mag_5', DoubleType(), True),\n    StructField('w3sigm_5', DoubleType(), True),\n    StructField('w3flg_5', IntegerType(), True),\n    StructField('w4mag_5', DoubleType(), True),\n    StructField('w4sigm_5', DoubleType(), True),\n    StructField('w4flg_5', IntegerType(), True),\n    StructField('w1mag_6', DoubleType(), True),\n    StructField('w1sigm_6', DoubleType(), True),\n    StructField('w1flg_6', IntegerType(), True),\n    StructField('w2mag_6', DoubleType(), True),\n    StructField('w2sigm_6', DoubleType(), True),\n    StructField('w2flg_6', IntegerType(), True),\n    StructField('w3mag_6', DoubleType(), True),\n    StructField('w3sigm_6', DoubleType(), True),\n    StructField('w3flg_6', IntegerType(), True),\n    StructField('w4mag_6', DoubleType(), True),\n    StructField('w4sigm_6', DoubleType(), True),\n    StructField('w4flg_6', IntegerType(), True),\n    StructField('w1mag_7', DoubleType(), True),\n    StructField('w1sigm_7', DoubleType(), True),\n    StructField('w1flg_7', IntegerType(), True),\n    StructField('w2mag_7', DoubleType(), True),\n    StructField('w2sigm_7', DoubleType(), True),\n    StructField('w2flg_7', IntegerType(), True),\n    StructField('w3mag_7', DoubleType(), True),\n    StructField('w3sigm_7', DoubleType(), True),\n    StructField('w3flg_7', IntegerType(), True),\n    StructField('w4mag_7', DoubleType(), True),\n    StructField('w4sigm_7', DoubleType(), True),\n    StructField('w4flg_7', IntegerType(), True),\n    StructField('w1mag_8', DoubleType(), True),\n    StructField('w1sigm_8', DoubleType(), True),\n    StructField('w1flg_8', IntegerType(), True),\n    StructField('w2mag_8', DoubleType(), True),\n    StructField('w2sigm_8', DoubleType(), True),\n    StructField('w2flg_8', IntegerType(), True),\n    StructField('w3mag_8', DoubleType(), True),\n    StructField('w3sigm_8', DoubleType(), True),\n    StructField('w3flg_8', IntegerType(), True),\n    StructField('w4mag_8', DoubleType(), True),\n    StructField('w4sigm_8', DoubleType(), True),\n    StructField('w4flg_8', IntegerType(), True),\n    StructField('w1magp', DoubleType(), True),\n    StructField('w1sigp1', DoubleType(), True),\n    StructField('w1sigp2', DoubleType(), True),\n    StructField('w1k', DoubleType(), True),\n    StructField('w1ndf', IntegerType(), True),\n    StructField('w1mlq', DoubleType(), True),\n    StructField('w1mjdmin', DoubleType(), True),\n    StructField('w1mjdmax', DoubleType(), True),\n    StructField('w1mjdmean', DoubleType(), True),\n    StructField('w2magp', DoubleType(), True),\n    StructField('w2sigp1', DoubleType(), True),\n    StructField('w2sigp2', DoubleType(), True),\n    StructField('w2k', DoubleType(), True),\n    StructField('w2ndf', IntegerType(), True),\n    StructField('w2mlq', DoubleType(), True),\n    StructField('w2mjdmin', DoubleType(), True),\n    StructField('w2mjdmax', DoubleType(), True),\n    StructField('w2mjdmean', DoubleType(), True),\n    StructField('w3magp', DoubleType(), True),\n    StructField('w3sigp1', DoubleType(), True),\n    StructField('w3sigp2', DoubleType(), True),\n    StructField('w3k', DoubleType(), True),\n    StructField('w3ndf', IntegerType(), True),\n    StructField('w3mlq', DoubleType(), True),\n    StructField('w3mjdmin', DoubleType(), True),\n    StructField('w3mjdmax', DoubleType(), True),\n    StructField('w3mjdmean', DoubleType(), True),\n    StructField('w4magp', DoubleType(), True),\n    StructField('w4sigp1', DoubleType(), True),\n    StructField('w4sigp2', DoubleType(), True),\n    StructField('w4k', DoubleType(), True),\n    StructField('w4ndf', IntegerType(), True),\n    StructField('w4mlq', DoubleType(), True),\n    StructField('w4mjdmin', DoubleType(), True),\n    StructField('w4mjdmax', DoubleType(), True),\n    StructField('w4mjdmean', DoubleType(), True),\n    StructField('rho12', IntegerType(), True),\n    StructField('rho23', IntegerType(), True),\n    StructField('rho34', IntegerType(), True),\n    StructField('q12', IntegerType(), True),\n    StructField('q23', IntegerType(), True),\n    StructField('q34', IntegerType(), True),\n    StructField('xscprox', DoubleType(), True),\n    StructField('w1rsemi', DoubleType(), True),\n    StructField('w1ba', DoubleType(), True),\n    StructField('w1pa', DoubleType(), True),\n    StructField('w1gmag', DoubleType(), True),\n    StructField('w1gerr', DoubleType(), True),\n    StructField('w1gflg', IntegerType(), True),\n    StructField('w2rsemi', DoubleType(), True),\n    StructField('w2ba', DoubleType(), True),\n    StructField('w2pa', DoubleType(), True),\n    StructField('w2gmag', DoubleType(), True),\n    StructField('w2gerr', DoubleType(), True),\n    StructField('w2gflg', IntegerType(), True),\n    StructField('w3rsemi', DoubleType(), True),\n    StructField('w3ba', DoubleType(), True),\n    StructField('w3pa', DoubleType(), True),\n    StructField('w3gmag', DoubleType(), True),\n    StructField('w3gerr', DoubleType(), True),\n    StructField('w3gflg', IntegerType(), True),\n    StructField('w4rsemi', DoubleType(), True),\n    StructField('w4ba', DoubleType(), True),\n    StructField('w4pa', DoubleType(), True),\n    StructField('w4gmag', DoubleType(), True),\n    StructField('w4gerr', DoubleType(), True),\n    StructField('w4gflg', IntegerType(), True),\n    StructField('tmass_key', IntegerType(), True),\n    StructField('r_2mass', DoubleType(), True),\n    StructField('pa_2mass', DoubleType(), True),\n    StructField('n_2mass', IntegerType(), True),\n    StructField('j_m_2mass', DoubleType(), True),\n    StructField('j_msig_2mass', DoubleType(), True),\n    StructField('h_m_2mass', DoubleType(), True),\n    StructField('h_msig_2mass', DoubleType(), True),\n    StructField('k_m_2mass', DoubleType(), True),\n    StructField('k_msig_2mass', DoubleType(), True),\n    StructField('x', DoubleType(), True),\n    StructField('y', DoubleType(), True),\n    StructField('z', DoubleType(), True),\n    StructField('spt_ind', IntegerType(), True),\n    StructField('htm20', LongType(), True),\n    StructField('spare', BooleanType(), True)\n])\n# N.B. that last column is the easiest way to work around the IPAC files having a trailing \"|\" at the end of each record which is interpereted as another column... d'oh\n\npanstarrs_dr1_otmo_schema = StructType([\n    StructField('obj_id', LongType(), True),\n    StructField('projection_id', ShortType(), True),\n    StructField('sky_cell_id', ShortType(), True),\n    StructField('obj_info_flag', IntegerType(), True),\n    StructField('quality_flag', ShortType(), True),\n    StructField('ra_mean', DoubleType(), True),\n    StructField('dec_mean', DoubleType(), True),\n    StructField('ra_mean_err', FloatType(), True),\n    StructField('dec_mean_err', FloatType(), True),\n    StructField('epoch_mean', DoubleType(), True),\n    StructField('n_stack_detections', ShortType(), True),\n    StructField('n_detections', ShortType(), True),\n    StructField('ng', ShortType(), True),\n    StructField('nr', ShortType(), True),\n    StructField('ni', ShortType(), True),\n    StructField('nz', ShortType(), True),\n    StructField('ny', ShortType(), True),\n    StructField('g_qf_perfect', FloatType(), True),\n    StructField('g_mean_psf_mag', FloatType(), True),\n    StructField('g_mean_psf_mag_err', FloatType(), True),\n    StructField('g_mean_psf_mag_std', FloatType(), True),\n    StructField('g_mean_psf_mag_npt', ShortType(), True),\n    StructField('g_mean_psf_mag_min', FloatType(), True),\n    StructField('g_mean_psf_mag_max', FloatType(), True),\n    StructField('g_mean_kron_mag', FloatType(), True),\n    StructField('g_mean_kron_mag_err', FloatType(), True),\n    StructField('g_flags', IntegerType(), True),\n    StructField('r_qf_perfect', FloatType(), True),\n    StructField('r_mean_psf_mag', FloatType(), True),\n    StructField('r_mean_psf_mag_err', FloatType(), True),\n    StructField('r_mean_psf_mag_std', FloatType(), True),\n    StructField('r_mean_psf_mag_npt', ShortType(), True),\n    StructField('r_mean_psf_mag_min', FloatType(), True),\n    StructField('r_mean_psf_mag_max', FloatType(), True),\n    StructField('r_mean_kron_mag', FloatType(), True),\n    StructField('r_mean_kron_mag_err', FloatType(), True),\n    StructField('r_flags', IntegerType(), True),\n    StructField('i_qf_perfect', FloatType(), True),\n    StructField('i_mean_psf_mag', FloatType(), True),\n    StructField('i_mean_psf_mag_err', FloatType(), True),\n    StructField('i_mean_psf_mag_std', FloatType(), True),\n    StructField('i_mean_psf_mag_npt', ShortType(), True),\n    StructField('i_mean_psf_mag_min', FloatType(), True),\n    StructField('i_mean_psf_mag_max', FloatType(), True),\n    StructField('i_mean_kron_mag', FloatType(), True),\n    StructField('i_mean_kron_mag_err', FloatType(), True),\n    StructField('i_flags', IntegerType(), True),\n    StructField('z_qf_perfect', FloatType(), True),\n    StructField('z_mean_psf_mag', FloatType(), True),\n    StructField('z_mean_psf_mag_err', FloatType(), True),\n    StructField('z_mean_psf_mag_std', FloatType(), True),\n    StructField('z_mean_psf_mag_npt', ShortType(), True),\n    StructField('z_mean_psf_mag_min', FloatType(), True),\n    StructField('z_mean_psf_mag_max', FloatType(), True),\n    StructField('z_mean_kron_mag', FloatType(), True),\n    StructField('z_mean_kron_mag_err', FloatType(), True),\n    StructField('z_flags', IntegerType(), True),\n    StructField('y_qf_perfect', FloatType(), True),\n    StructField('y_mean_psf_mag', FloatType(), True),\n    StructField('y_mean_psf_mag_err', FloatType(), True),\n    StructField('y_mean_psf_mag_std', FloatType(), True),\n    StructField('y_mean_psf_mag_npt', ShortType(), True),\n    StructField('y_mean_psf_mag_min', FloatType(), True),\n    StructField('y_mean_psf_mag_max', FloatType(), True),\n    StructField('y_mean_kron_mag', FloatType(), True),\n    StructField('y_mean_kron_mag_err', FloatType(), True),\n    StructField('y_flags', IntegerType(), True),\n])\n\n\n# crossmatch table schemas:\n\n# PS1\npanstarrs1_best_neighbour_schema = StructType([\n    StructField('source_id', LongType(), True),\n    StructField('clean_panstarrs1_oid', LongType(), True),\n    StructField('original_ext_source_id', LongType(), True),\n    StructField('angular_distance', FloatType(), True),\n    StructField('number_of_neighbours', ByteType(), True),\n    StructField('number_of_mates', ByteType(), True),\n    StructField('xm_flag', ShortType(), True),\n])\n\n# ALLWISE:\nallwise_best_neighbour_schema = StructType([\n    StructField('source_id', LongType(), True),\n    StructField('original_ext_source_id', StringType(), True),\n    StructField('angular_distance', FloatType(), True),\n    StructField('xm_flag', ShortType(), True),\n    StructField('allwise_oid', IntegerType(), True),\n    StructField('number_of_neighbours', ByteType(), True),\n    StructField('number_of_mates', ByteType(), True),\n])\n\n# 2MASS:\ntmasspscxsc_best_neighbour_schema = StructType([\n    StructField('source_id', LongType(), True),\n    StructField('original_ext_source_id', StringType(), True),\n    StructField('angular_distance', FloatType(), True),\n    StructField('xm_flag', ShortType(), True),\n    StructField('clean_tmass_psc_xsc_oid', IntegerType(), True),\n    StructField('number_of_neighbours', ByteType(), True),\n    StructField('number_of_mates', ByteType(), True),\n])\n\n\n# sanity checks:\n#print (gaia_source_schema)\n\n",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:15:58.535",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "python",
+"editOnDblClick": false,
+"completionKey": "TAB",
+"completionSupport": true
+},
+"editorMode": "ace/mode/python",
+"title": true,
+"editorHide": true,
+"tableHide": false
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": []
+},
+"apps": [],
+"jobName": "paragraph_1620133886543_1367685996",
+"id": "20210504-131126_1544574772",
+"dateCreated": "2021-05-04 13:11:26.543",
+"dateStarted": "2021-08-26 13:15:58.550",
+"dateFinished": "2021-08-26 13:16:25.162",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+},
+{
+"title": "Utility function definitions",
+"text": "%pyspark\n\n# useful definitions\n\n# number of buckets for our platform\nNUM_BUCKETS = 2048\n\n# and to re-establish the resource in a new (or reset) spark context:\ndef reattachParquetFileResourceToSparkContext(table_name, file_path, *schema_structures):\n    \"\"\"\n    Creates a Spark (in-memory) meta-record for the table resource specified for querying \n    through the PySpark SQL API.\n    \n    Assumes that the table contains the Gaia source_id attribute and that the files have \n    been previously partitioned, bucketed and sorted on this field in parquet format\n    - see function saveToBinnedParquet().  If the table name specified already exists in the\n    catalogue IT WILL BE REMOVED (but the underlying data, assumed external, will remain).\n    \n    Parameters\n    ----------\n    table_name : str\n        The table name to be used as the identifier in SQL queries etc.\n    file_path : str\n        The full disk file system path name to the folder containing the parquet file set. \n    schema_structures : StructType\n        One or more schema structures expressed as a StructType object containing a list of\n        StructField(field_name : str, type : data_type : DataType(), nullable : boolean)\n    \"\"\"\n\n    # put in the columns and their data types ...\n    table_create_statement = \"CREATE TABLE `\" + table_name + \"` (\"\n    for schema_structure in schema_structures:\n        for field in schema_structure:\n            table_create_statement += \"`\" + field.name + \"` \" + field.dataType.simpleString() + \",\"\n    # ... zapping that extraneous comma at the end\n    table_create_statement = table_create_statement[:-1]\n        \n    # append the organisational details \n    table_create_statement += \") USING parquet OPTIONS (path '\" + file_path + \"') \"\n    table_create_statement += \"CLUSTERED BY (source_id) SORTED BY (source_id) INTO %d\"%(NUM_BUCKETS) + \" BUCKETS\"\n    \n    # sanity check\n    print(table_create_statement)\n    \n    # scrub any existing record - N.B. tables defined in this way are EXTERNAL, so this statement will not scrub\n    # the underlying file data set. Also if the table doesn't exist, this will silently do nothing (no exception\n    # will be thrown).\n    spark.sql(\"DROP TABLE IF EXISTS \" + table_name)\n    \n    # create the table resource\n    spark.sql(table_create_statement)\n",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:16:25.220",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "python",
+"editOnDblClick": false,
+"completionKey": "TAB",
+"completionSupport": true
+},
+"editorMode": "ace/mode/python",
+"title": true,
+"editorHide": true
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": []
+},
+"apps": [],
+"jobName": "paragraph_1620133999429_1955806674",
+"id": "20210504-131319_1186301617",
+"dateCreated": "2021-05-04 13:13:19.429",
+"dateStarted": "2021-08-26 13:16:25.235",
+"dateFinished": "2021-08-26 13:16:25.331",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+},
+{
+"title": "Set up the catalogues on the platform",
+"text": "%pyspark\n\n# database name to create\ndatabase = \"gaiaedr3\"\n\n# root data store path: TODO change this to the official one when established.\ndata_store = \"file:////data/gaia/GEDR3/\" # \"file:////user/nch/PARQUET/REPARTITIONED/\"\n\n# create the database and switch the current SQL database context to it (from default)\nspark.sql(\"create database \" + database)\nspark.sql(\"use \" + database)\n\n# create the tables against their corresponding file sets and schema\nreattachParquetFileResourceToSparkContext(\"gaia_source\", data_store + \"GEDR3_GAIASOURCE\", gaia_source_schema)\nreattachParquetFileResourceToSparkContext(\"gaia_source_tmasspsc_best_neighbours\", data_store + \"GEDR3_2MASSPSC_BEST_NEIGHBOURS\", tmasspscxsc_best_neighbour_schema, twomass_psc_schema)\nreattachParquetFileResourceToSparkContext(\"gaia_source_allwise_best_neighbours\", data_store + \"GEDR3_ALLWISE_BEST_NEIGHBOURS\", allwise_best_neighbour_schema, twomass_psc_schema)\nreattachParquetFileResourceToSparkContext(\"gaia_source_ps1_best_neighbours\", data_store + \"GEDR3_PS1_BEST_NEIGHBOURS\", panstarrs1_best_neighbour_schema, panstarrs_dr1_otmo_schema)\n\n\n\n",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:16:25.335",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "python",
+"editOnDblClick": false,
+"completionKey": "TAB",
+"completionSupport": true
+},
+"editorMode": "ace/mode/python",
+"title": true,
+"editorHide": false
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": [
+{
+"type": "TEXT",
+"data": "CREATE TABLE `gaia_source` (`solution_id` bigint,`designation` string,`source_id` bigint,`random_index` bigint,`ref_epoch` float,`ra` double,`ra_error` double,`dec` double,`dec_error` double,`parallax` double,`parallax_error` double,`parallax_over_error` float,`pm` float,`pmra` double,`pmra_error` float,`pmdec` double,`pmdec_error` float,`ra_dec_corr` float,`ra_parallax_corr` float,`ra_pmra_corr` float,`ra_pmdec_corr` float,`dec_parallax_corr` float,`dec_pmra_corr` float,`dec_pmdec_corr` float,`parallax_pmra_corr` float,`parallax_pmdec_corr` float,`pmra_pmdec_corr` float,`astrometric_n_obs_al` smallint,`astrometric_n_obs_ac` smallint,`astrometric_n_good_obs_al` smallint,`astrometric_n_bad_obs_al` smallint,`astrometric_gof_al` float,`astrometric_chi2_al` float,`astrometric_excess_noise` float,`astrometric_excess_noise_sig` float,`astrometric_params_solved` smallint,`astrometric_primary_flag` boolean,`nu_eff_used_in_astrometry` float,`pseudocolour` float,`pseudocolour_error` float,`ra_pseudocolour_corr` float,`dec_pseudocolour_corr` float,`parallax_pseudocolour_corr` float,`pmra_pseudocolour_corr` float,`pmdec_pseudocolour_corr` float,`astrometric_matched_transits` smallint,`visibility_periods_used` smallint,`astrometric_sigma5d_max` float,`matched_transits` smallint,`new_matched_transits` smallint,`matched_transits_removed` smallint,`ipd_gof_harmonic_amplitude` float,`ipd_gof_harmonic_phase` float,`ipd_frac_multi_peak` smallint,`ipd_frac_odd_win` smallint,`ruwe` float,`scan_direction_strength_k1` float,`scan_direction_strength_k2` float,`scan_direction_strength_k3` float,`scan_direction_strength_k4` float,`scan_direction_mean_k1` float,`scan_direction_mean_k2` float,`scan_direction_mean_k3` float,`scan_direction_mean_k4` float,`duplicated_source` boolean,`phot_g_n_obs` smallint,`phot_g_mean_flux` double,`phot_g_mean_flux_error` float,`phot_g_mean_flux_over_error` float,`phot_g_mean_mag` float,`phot_bp_n_obs` smallint,`phot_bp_mean_flux` double,`phot_bp_mean_flux_error` float,`phot_bp_mean_flux_over_error` float,`phot_bp_mean_mag` float,`phot_rp_n_obs` smallint,`phot_rp_mean_flux` double,`phot_rp_mean_flux_error` float,`phot_rp_mean_flux_over_error` float,`phot_rp_mean_mag` float,`phot_bp_n_contaminated_transits` smallint,`phot_bp_n_blended_transits` smallint,`phot_rp_n_contaminated_transits` smallint,`phot_rp_n_blended_transits` smallint,`phot_proc_mode` smallint,`phot_bp_rp_excess_factor` float,`bp_rp` float,`bp_g` float,`g_rp` float,`dr2_radial_velocity` float,`dr2_radial_velocity_error` float,`dr2_rv_nb_transits` smallint,`dr2_rv_template_teff` float,`dr2_rv_template_logg` float,`dr2_rv_template_fe_h` float,`l` double,`b` double,`ecl_lon` double,`ecl_lat` double) USING parquet OPTIONS (path 'file:////data/gaia/GEDR3/GEDR3_GAIASOURCE') CLUSTERED BY (source_id) SORTED BY (source_id) INTO 2048 BUCKETS\nCREATE TABLE `gaia_source_tmasspsc_best_neighbours` (`source_id` bigint,`original_ext_source_id` string,`angular_distance` float,`xm_flag` smallint,`clean_tmass_psc_xsc_oid` int,`number_of_neighbours` tinyint,`number_of_mates` tinyint,`ra` double,`dec` double,`err_maj` float,`err_min` float,`err_ang` smallint,`designation` string,`j_m` float,`j_cmsig` float,`j_msigcom` float,`j_snr` float,`h_m` float,`h_cmsig` float,`h_msigcom` float,`h_snr` float,`k_m` float,`k_cmsig` float,`k_msigcom` float,`k_snr` float,`ph_qual` string,`rd_flg` string,`bl_flg` string,`cc_flg` string,`ndet` string,`prox` float,`pxpa` smallint,`pxcntr` int,`gal_contam` smallint,`mp_flg` smallint,`pts_key` int,`hemis` string,`date` date,`scan` smallint,`glon` float,`glat` float,`x_scan` float,`jdate` double,`j_psfchi` float,`h_psfchi` float,`k_psfchi` float,`j_m_stdap` float,`j_msig_stdap` float,`h_m_stdap` float,`h_msig_stdap` float,`k_m_stdap` float,`k_msig_stdap` float,`dist_edge_ns` int,`dist_edge_ew` int,`dist_edge_flg` string,`dup_src` smallint,`use_src` smallint,`a` string,`dist_opt` float,`phi_opt` smallint,`b_m_opt` float,`vr_m_opt` float,`nopt_mchs` smallint,`ext_key` int,`scan_key` int,`coadd_key` int,`coadd` smallint) USING parquet OPTIONS (path 'file:////data/gaia/GEDR3/GEDR3_2MASSPSC_BEST_NEIGHBOURS') CLUSTERED BY (source_id) SORTED BY (source_id) INTO 2048 BUCKETS\nCREATE TABLE `gaia_source_allwise_best_neighbours` (`source_id` bigint,`original_ext_source_id` string,`angular_distance` float,`xm_flag` smallint,`allwise_oid` int,`number_of_neighbours` tinyint,`number_of_mates` tinyint,`ra` double,`dec` double,`err_maj` float,`err_min` float,`err_ang` smallint,`designation` string,`j_m` float,`j_cmsig` float,`j_msigcom` float,`j_snr` float,`h_m` float,`h_cmsig` float,`h_msigcom` float,`h_snr` float,`k_m` float,`k_cmsig` float,`k_msigcom` float,`k_snr` float,`ph_qual` string,`rd_flg` string,`bl_flg` string,`cc_flg` string,`ndet` string,`prox` float,`pxpa` smallint,`pxcntr` int,`gal_contam` smallint,`mp_flg` smallint,`pts_key` int,`hemis` string,`date` date,`scan` smallint,`glon` float,`glat` float,`x_scan` float,`jdate` double,`j_psfchi` float,`h_psfchi` float,`k_psfchi` float,`j_m_stdap` float,`j_msig_stdap` float,`h_m_stdap` float,`h_msig_stdap` float,`k_m_stdap` float,`k_msig_stdap` float,`dist_edge_ns` int,`dist_edge_ew` int,`dist_edge_flg` string,`dup_src` smallint,`use_src` smallint,`a` string,`dist_opt` float,`phi_opt` smallint,`b_m_opt` float,`vr_m_opt` float,`nopt_mchs` smallint,`ext_key` int,`scan_key` int,`coadd_key` int,`coadd` smallint) USING parquet OPTIONS (path 'file:////data/gaia/GEDR3/GEDR3_ALLWISE_BEST_NEIGHBOURS') CLUSTERED BY (source_id) SORTED BY (source_id) INTO 2048 BUCKETS\nCREATE TABLE `gaia_source_ps1_best_neighbours` (`source_id` bigint,`clean_panstarrs1_oid` bigint,`original_ext_source_id` bigint,`angular_distance` float,`number_of_neighbours` tinyint,`number_of_mates` tinyint,`xm_flag` smallint,`obj_id` bigint,`projection_id` smallint,`sky_cell_id` smallint,`obj_info_flag` int,`quality_flag` smallint,`ra_mean` double,`dec_mean` double,`ra_mean_err` float,`dec_mean_err` float,`epoch_mean` double,`n_stack_detections` smallint,`n_detections` smallint,`ng` smallint,`nr` smallint,`ni` smallint,`nz` smallint,`ny` smallint,`g_qf_perfect` float,`g_mean_psf_mag` float,`g_mean_psf_mag_err` float,`g_mean_psf_mag_std` float,`g_mean_psf_mag_npt` smallint,`g_mean_psf_mag_min` float,`g_mean_psf_mag_max` float,`g_mean_kron_mag` float,`g_mean_kron_mag_err` float,`g_flags` int,`r_qf_perfect` float,`r_mean_psf_mag` float,`r_mean_psf_mag_err` float,`r_mean_psf_mag_std` float,`r_mean_psf_mag_npt` smallint,`r_mean_psf_mag_min` float,`r_mean_psf_mag_max` float,`r_mean_kron_mag` float,`r_mean_kron_mag_err` float,`r_flags` int,`i_qf_perfect` float,`i_mean_psf_mag` float,`i_mean_psf_mag_err` float,`i_mean_psf_mag_std` float,`i_mean_psf_mag_npt` smallint,`i_mean_psf_mag_min` float,`i_mean_psf_mag_max` float,`i_mean_kron_mag` float,`i_mean_kron_mag_err` float,`i_flags` int,`z_qf_perfect` float,`z_mean_psf_mag` float,`z_mean_psf_mag_err` float,`z_mean_psf_mag_std` float,`z_mean_psf_mag_npt` smallint,`z_mean_psf_mag_min` float,`z_mean_psf_mag_max` float,`z_mean_kron_mag` float,`z_mean_kron_mag_err` float,`z_flags` int,`y_qf_perfect` float,`y_mean_psf_mag` float,`y_mean_psf_mag_err` float,`y_mean_psf_mag_std` float,`y_mean_psf_mag_npt` smallint,`y_mean_psf_mag_min` float,`y_mean_psf_mag_max` float,`y_mean_kron_mag` float,`y_mean_kron_mag_err` float,`y_flags` int) USING parquet OPTIONS (path 'file:////data/gaia/GEDR3/GEDR3_PS1_BEST_NEIGHBOURS') CLUSTERED BY (source_id) SORTED BY (source_id) INTO 2048 BUCKETS\n"
+}
+]
+},
+"apps": [],
+"jobName": "paragraph_1620134079626_-634422541",
+"id": "20210504-131439_625331903",
+"dateCreated": "2021-05-04 13:14:39.627",
+"dateStarted": "2021-08-26 13:16:25.356",
+"dateFinished": "2021-08-26 13:16:27.251",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+},
+{
+"title": "Show details of databases and tables",
+"text": "%pyspark\n\n# show the database(s) now available within the context\nspark.sql(\"show databases\").show()\n\n# show the contents of the catalogue store that has been set up\nspark.catalog.listTables()\n",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:16:27.259",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "python",
+"editOnDblClick": false,
+"completionKey": "TAB",
+"completionSupport": true
+},
+"editorMode": "ace/mode/python",
+"title": true,
+"editorHide": true
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": [
+{
+"type": "TEXT",
+"data": "+------------+\n|databaseName|\n+------------+\n|     default|\n|    gaiaedr3|\n+------------+\n\n[Table(name='gaia_source', database='gaiaedr3', description=None, tableType='EXTERNAL', isTemporary=False),\n Table(name='gaia_source_allwise_best_neighbours', database='gaiaedr3', description=None, tableType='EXTERNAL', isTemporary=False),\n Table(name='gaia_source_ps1_best_neighbours', database='gaiaedr3', description=None, tableType='EXTERNAL', isTemporary=False),\n Table(name='gaia_source_tmasspsc_best_neighbours', database='gaiaedr3', description=None, tableType='EXTERNAL', isTemporary=False)]"
+}
+]
+},
+"apps": [],
+"jobName": "paragraph_1620134995984_-969491630",
+"id": "20210504-132955_1641890430",
+"dateCreated": "2021-05-04 13:29:55.984",
+"dateStarted": "2021-08-26 13:16:27.286",
+"dateFinished": "2021-08-26 13:16:30.367",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+},
+{
+"title": "Check location on disk for main catalogue table from metastore",
+"text": "%pyspark\n\nspark.sql('DESCRIBE EXTENDED gaia_source').show(300, truncate = False)\n",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:16:30.392",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "python",
+"editOnDblClick": false,
+"completionKey": "TAB",
+"completionSupport": true
+},
+"editorMode": "ace/mode/python",
+"title": true
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": [
+{
+"type": "TEXT",
+"data": "+-------------------------------+----------------------------------------+-------+\n|col_name                       |data_type                               |comment|\n+-------------------------------+----------------------------------------+-------+\n|solution_id                    |bigint                                  |null   |\n|designation                    |string                                  |null   |\n|source_id                      |bigint                                  |null   |\n|random_index                   |bigint                                  |null   |\n|ref_epoch                      |float                                   |null   |\n|ra                             |double                                  |null   |\n|ra_error                       |double                                  |null   |\n|dec                            |double                                  |null   |\n|dec_error                      |double                                  |null   |\n|parallax                       |double                                  |null   |\n|parallax_error                 |double                                  |null   |\n|parallax_over_error            |float                                   |null   |\n|pm                             |float                                   |null   |\n|pmra                           |double                                  |null   |\n|pmra_error                     |float                                   |null   |\n|pmdec                          |double                                  |null   |\n|pmdec_error                    |float                                   |null   |\n|ra_dec_corr                    |float                                   |null   |\n|ra_parallax_corr               |float                                   |null   |\n|ra_pmra_corr                   |float                                   |null   |\n|ra_pmdec_corr                  |float                                   |null   |\n|dec_parallax_corr              |float                                   |null   |\n|dec_pmra_corr                  |float                                   |null   |\n|dec_pmdec_corr                 |float                                   |null   |\n|parallax_pmra_corr             |float                                   |null   |\n|parallax_pmdec_corr            |float                                   |null   |\n|pmra_pmdec_corr                |float                                   |null   |\n|astrometric_n_obs_al           |smallint                                |null   |\n|astrometric_n_obs_ac           |smallint                                |null   |\n|astrometric_n_good_obs_al      |smallint                                |null   |\n|astrometric_n_bad_obs_al       |smallint                                |null   |\n|astrometric_gof_al             |float                                   |null   |\n|astrometric_chi2_al            |float                                   |null   |\n|astrometric_excess_noise       |float                                   |null   |\n|astrometric_excess_noise_sig   |float                                   |null   |\n|astrometric_params_solved      |smallint                                |null   |\n|astrometric_primary_flag       |boolean                                 |null   |\n|nu_eff_used_in_astrometry      |float                                   |null   |\n|pseudocolour                   |float                                   |null   |\n|pseudocolour_error             |float                                   |null   |\n|ra_pseudocolour_corr           |float                                   |null   |\n|dec_pseudocolour_corr          |float                                   |null   |\n|parallax_pseudocolour_corr     |float                                   |null   |\n|pmra_pseudocolour_corr         |float                                   |null   |\n|pmdec_pseudocolour_corr        |float                                   |null   |\n|astrometric_matched_transits   |smallint                                |null   |\n|visibility_periods_used        |smallint                                |null   |\n|astrometric_sigma5d_max        |float                                   |null   |\n|matched_transits               |smallint                                |null   |\n|new_matched_transits           |smallint                                |null   |\n|matched_transits_removed       |smallint                                |null   |\n|ipd_gof_harmonic_amplitude     |float                                   |null   |\n|ipd_gof_harmonic_phase         |float                                   |null   |\n|ipd_frac_multi_peak            |smallint                                |null   |\n|ipd_frac_odd_win               |smallint                                |null   |\n|ruwe                           |float                                   |null   |\n|scan_direction_strength_k1     |float                                   |null   |\n|scan_direction_strength_k2     |float                                   |null   |\n|scan_direction_strength_k3     |float                                   |null   |\n|scan_direction_strength_k4     |float                                   |null   |\n|scan_direction_mean_k1         |float                                   |null   |\n|scan_direction_mean_k2         |float                                   |null   |\n|scan_direction_mean_k3         |float                                   |null   |\n|scan_direction_mean_k4         |float                                   |null   |\n|duplicated_source              |boolean                                 |null   |\n|phot_g_n_obs                   |smallint                                |null   |\n|phot_g_mean_flux               |double                                  |null   |\n|phot_g_mean_flux_error         |float                                   |null   |\n|phot_g_mean_flux_over_error    |float                                   |null   |\n|phot_g_mean_mag                |float                                   |null   |\n|phot_bp_n_obs                  |smallint                                |null   |\n|phot_bp_mean_flux              |double                                  |null   |\n|phot_bp_mean_flux_error        |float                                   |null   |\n|phot_bp_mean_flux_over_error   |float                                   |null   |\n|phot_bp_mean_mag               |float                                   |null   |\n|phot_rp_n_obs                  |smallint                                |null   |\n|phot_rp_mean_flux              |double                                  |null   |\n|phot_rp_mean_flux_error        |float                                   |null   |\n|phot_rp_mean_flux_over_error   |float                                   |null   |\n|phot_rp_mean_mag               |float                                   |null   |\n|phot_bp_n_contaminated_transits|smallint                                |null   |\n|phot_bp_n_blended_transits     |smallint                                |null   |\n|phot_rp_n_contaminated_transits|smallint                                |null   |\n|phot_rp_n_blended_transits     |smallint                                |null   |\n|phot_proc_mode                 |smallint                                |null   |\n|phot_bp_rp_excess_factor       |float                                   |null   |\n|bp_rp                          |float                                   |null   |\n|bp_g                           |float                                   |null   |\n|g_rp                           |float                                   |null   |\n|dr2_radial_velocity            |float                                   |null   |\n|dr2_radial_velocity_error      |float                                   |null   |\n|dr2_rv_nb_transits             |smallint                                |null   |\n|dr2_rv_template_teff           |float                                   |null   |\n|dr2_rv_template_logg           |float                                   |null   |\n|dr2_rv_template_fe_h           |float                                   |null   |\n|l                              |double                                  |null   |\n|b                              |double                                  |null   |\n|ecl_lon                        |double                                  |null   |\n|ecl_lat                        |double                                  |null   |\n|                               |                                        |       |\n|# Detailed Table Information   |                                        |       |\n|Database                       |gaiaedr3                                |       |\n|Table                          |gaia_source                             |       |\n|Created Time                   |Thu Aug 26 13:16:26 UTC 2021            |       |\n|Last Access                    |Wed Dec 31 23:59:59 UTC 1969            |       |\n|Created By                     |Spark 2.4.7                             |       |\n|Type                           |EXTERNAL                                |       |\n|Provider                       |parquet                                 |       |\n|Num Buckets                    |2048                                    |       |\n|Bucket Columns                 |[`source_id`]                           |       |\n|Sort Columns                   |[`source_id`]                           |       |\n|Location                       |file:///data/gaia/GEDR3/GEDR3_GAIASOURCE|       |\n+-------------------------------+----------------------------------------+-------+\n\n"
+}
+]
+},
+"apps": [],
+"jobName": "paragraph_1620137665146_-1323743199",
+"id": "20210504-141425_1480464936",
+"dateCreated": "2021-05-04 14:14:25.146",
+"dateStarted": "2021-08-26 13:16:30.406",
+"dateFinished": "2021-08-26 13:16:30.512",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+},
+{
+"text": "%pyspark\n",
+"user": "dcr",
+"dateUpdated": "2021-08-26 13:16:30.606",
+"config": {
+"colWidth": 12,
+"fontSize": 9,
+"enabled": true,
+"results": {},
+"editorSetting": {
+"language": "python",
+"editOnDblClick": false,
+"completionKey": "TAB",
+"completionSupport": true
+},
+"editorMode": "ace/mode/python"
+},
+"settings": {
+"params": {},
+"forms": {}
+},
+"results": {
+"code": "SUCCESS",
+"msg": []
+},
+"apps": [],
+"jobName": "paragraph_1621586978775_349626067",
+"id": "20210521-084938_875368697",
+"dateCreated": "2021-05-21 08:49:38.776",
+"dateStarted": "2021-08-05 05:04:48.757",
+"dateFinished": "2021-08-05 05:04:48.991",
+"status": "FINISHED",
+"progressUpdateIntervalMs": 500
+}
+],
+"name": "/AglaisPublicExamples/SetUp",
+"id": "2G7GZKWUH",
+"noteParams": {},
+"noteForms": {},
+"angularObjects": {
+"md:shared_process": [],
+"spark:dcr:": []
+},
+"config": {
+"isZeppelinNotebookCronEnable": false
+},
+"info": {}
+}

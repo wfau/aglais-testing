@@ -2,9 +2,9 @@
 "notebooks" : [
            {
               "name" : "pi_quick",
-              "filepath" : "https://raw.githubusercontent.com/wfau/test-notebooks/main/notebooks/pi_quick.json",
+              "filepath" : "https://raw.githubusercontent.com/stvoutsin/aglais-testing/main/notebooks/pi_quick.json",
               "totaltime" : 10,
-              "results" :  [ "Pi is roughly 3.141854"]
+              "results" :  [ "3.141210"]
            }
 
 ]
