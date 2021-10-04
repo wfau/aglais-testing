@@ -29,6 +29,7 @@ class AglaisBenchmarker(object):
 
 
     def __init__(self, notebook_config=None, zeppelin_configdir="/", verbose=True):
+        self.verbose = verbose
         self.configdir = zeppelin_configdir
         self.result_file = "output.json"
         try:
