@@ -28,7 +28,7 @@ class AglaisBenchmarker(object):
         #return data
 
 
-    def __init__(self, notebook_config=None, zeppelin_configdir="/"):
+    def __init__(self, notebook_config=None, zeppelin_configdir="/", verbose=True):
         self.configdir = zeppelin_configdir
         self.result_file = "output.json"
         try:
@@ -133,8 +133,8 @@ class AglaisBenchmarker(object):
 
         end = time.time()
         print ("Test completed after: {:.2f} seconds".format(end-start))
-        print("-----------")
-
+        if self.verbose:
+            print (results)
         return results
 
 
@@ -161,6 +161,7 @@ class AglaisBenchmarker(object):
         """
 
         results = {}
+
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
             filepath = notebook["filepath"]
@@ -168,6 +169,7 @@ class AglaisBenchmarker(object):
             expected_output = notebook["results"]
             valid = "TRUE"
             msg = ""
+
             try:
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
