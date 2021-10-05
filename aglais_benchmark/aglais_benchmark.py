@@ -22,11 +22,6 @@ class AglaisBenchmarker(object):
         """
         return requests.get(urlpath).json()
 
-        #with urllib.request.urlopen(urlpath) as url:
-        #    jsondata = url.read().decode("utf-8-sig")
-        #    data = json.loads(jsondata)
-        #return data
-
 
     def __init__(self, notebook_config=None, zeppelin_configdir="/", verbose=True):
         self.verbose = verbose
@@ -179,9 +174,6 @@ class AglaisBenchmarker(object):
                     status = "SLOW"
 
                 if len(expected_output) == len(output):
-                    print("Expected Output: " + str(expected_output))
-                    print("Actual output: " + str(output))
-                    print("-----------")
 
                     for i in range(len(output)):
                         if output[i]!=expected_output[i]:
@@ -197,9 +189,6 @@ class AglaisBenchmarker(object):
 
 
 if __name__ == '__main__':
-
-    # Single user benchmark
-    # AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=False, users=1)
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
