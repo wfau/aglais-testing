@@ -20,7 +20,9 @@ class AglaisBenchmarker(object):
         :type urlpath: str
         :rtype: dict
         """
-        return requests.get(urlpath).json()
+	response = requests.get(urlpath).text
+        d = json.loads(response, strict=False)
+        return d
 
 
     def __init__(self, notebook_config=None, zeppelin_configdir="/", verbose=True):

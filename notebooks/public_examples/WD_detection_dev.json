@@ -343,7 +343,7 @@
 			"editorHide": false,
 			"title": true,
 			"results": {},
-			"enabled": false
+			"enabled": true
 		},
 		"settings": {
 			"params": {},
@@ -721,7 +721,7 @@
 			"editorHide": false,
 			"title": true,
 			"results": {},
-			"enabled": false
+			"enabled": true
 		},
 		"settings": {
 			"params": {},
