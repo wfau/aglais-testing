@@ -27,7 +27,7 @@
            {
               "name" : "QC_cuts_dev.json",
               "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/public_examples/QC_cuts_dev.json",
-              "totaltime" : 600,
+              "totaltime" : 25200,
               "results" : []
            },
            {
