@@ -29,13 +29,8 @@
               "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/public_examples/QC_cuts_dev.json",
               "totaltime" : 25200,
               "results" : []
-           },
-           {
-              "name" : "WD_detection_dev.json",
-              "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/public_examples/WD_detection_dev.json",
-              "totaltime" : 600,
-              "results" : []
            }
+
 ]
 }
 
