@@ -1,874 +1,805 @@
 {
-	"paragraphs": [{
-		"title": "Intro",
-		"text": "%md\n\n# Training a Random Forest to identify White Dwarf Stars\n\nUses the list of White Dwarf stars from https://arxiv.org/abs/1807.03315 - WD catalogue henceforth -  to train a Random Forest.\nThe method is similar to Section 5.8 from https://arxiv.org/abs/2012.02061 - GCNS henceforth. (GCNS = Gaia Catalogue of Nearby Stars)\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"tableHide": false,
-			"editorSetting": {
-				"language": "markdown",
-				"editOnDblClick": true,
-				"completionKey": "TAB",
-				"completionSupport": false
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/markdown",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936969_-1029487722",
-		"id": "20210309-150210_1093711567",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"focus": true,
-		"$$hashKey": "object:7191"
-	}, {
-		"title": "Import_modules",
-		"text": "%spark.pyspark\n\nimport numpy as np\nimport pandas as pd\nimport pyspark.ml as ml\nfrom scipy.stats import kde\nimport matplotlib.pylab as plt\nfrom collections import Counter\nfrom pyspark.ml.feature import VectorAssembler\nfrom pyspark.sql.types import ArrayType, DoubleType\nfrom pyspark.sql.functions import lit, col, when, udf, greatest, log10\nfrom pyspark.ml.classification import RandomForestClassifier\nfrom pyspark.ml.evaluation import MulticlassClassificationEvaluator\n            \nuser_home = 'file:///user/dcr/'\ndev_run = True",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_692119918",
-		"id": "20210309-151423_1062475189",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7192"
-	}, {
-		"title": "save functions",
-		"text": "%spark.pyspark\ndef savefigs(filename, dpi = 450):\n    plt.savefig(f'/user/dcr/WD_detection/plots/{filename}.png',\n                dpi=dpi, bbox_inches = 'tight')\n    plt.savefig(f'/user/dcr/WD_detection/plots/{filename}.pdf',\n                dpi=dpi, bbox_inches = 'tight')\n                \ndef savetxt(df, filename):\n    if type(df) == list:\n        import json\n        with open(f'/user/dcr/WD_detection/plots/data/{filename}.json', 'w') as f:\n            json.dump(df, f, indent=2)\n            \ndef opentxt(filename):\n    if filename.split('.')[-1] == 'json':\n        import json\n        with open(filename, 'r') as f:\n            score = json.load(f)\n            \n\ndef return_columns(how = 'list'):\n    if how == 'list':\n        return ['source_id', 'parallax', 'ra', 'dec', 'l', 'b', 'phot_g_mean_flux',\n                'phot_g_mean_mag', 'phot_bp_mean_flux', 'phot_bp_mean_mag', 'phot_rp_mean_flux',\n                'phot_rp_mean_mag', 'bp_rp', 'bp_g', 'g_rp']\n    elif how =='str':\n        return 'source_id, parallax, ra, dec, l, b, phot_g_mean_flux,\\\n                phot_g_mean_mag, phot_bp_mean_flux, phot_bp_mean_mag, phot_rp_mean_flux,\\\n                phot_rp_mean_mag, bp_rp, bp_g, g_rp'\n                \n                \ndef return_training_columns(how = 'list'):\n    if how == 'list':\n        # return ['source_id', 'parallax', 'phot_g_mean_flux', 'phot_g_mean_mag',\n        #     'phot_bp_mean_flux', 'phot_bp_mean_mag', 'phot_rp_mean_flux',\n        #     'phot_rp_mean_mag', 'bp_rp', 'bp_g', 'g_rp', 'm_g', 'is_wd']\n         return ['source_id', 'parallax', 'bp_rp', 'bp_g', 'g_rp', 'm_g', 'is_wd']\n    elif how =='str':\n        # return 'source_id, parallax, phot_g_mean_flux, phot_g_mean_mag,\\\n        #         phot_bp_mean_flux, phot_bp_mean_mag, phot_rp_mean_flux,\\\n        #         phot_rp_mean_mag, bp_rp, bp_g, g_rp, m_g, is_wd'\n        return 'source_id, parallax, bp_rp, bp_g, g_rp, m_g, is_wd'",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_639016981",
-		"id": "20210922-132626_1396769553",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7193"
-	}, {
-		"title": "makeSpuriousSourceQueryable",
-		"text": "%spark.pyspark\n\ndef vector_to_array(col):\n    def to_array_(v):\n        return v.toArray().tolist()\n    # Important: asNondeterministic requires Spark 2.3 or later\n    # It can be safely removed i.e.\n    # return udf(to_array_, ArrayType(DoubleType()))(col)\n    # but at the cost of decreased performance\n    return udf(to_array_, ArrayType(DoubleType())).asNondeterministic()(col)\n    \n    \ndef queryableSpuriousSources(filename):\n    '''opens result from ML_cuts and makes queryable '''\n\n    QC_cuts = spark.read.parquet('file:///user/dcr//ML_cuts/results/allDataMatchPS1.parquet')\n    QC_cuts = QC_cuts.withColumn(\"probability\", vector_to_array(col(\"probability\")))\\\n                       .select(['source_id', 'prediction'] + [col(\"probability\")[i] for i in range(2)])\\\n                        .withColumn('confidence', greatest(col('probability[0]'), col('probability[1]')))\\\n                        .select(['source_id', 'prediction', 'confidence'])\\\n                        .withColumnRenamed('prediction', 'is_good')\n     \n    QC_cuts.createOrReplaceTempView('dcr_spurious_sources')\n\nqueryableSpuriousSources(filename = 'file:///user/dcr//ML_cuts/results/allDataMatchPS1.parquet', )\n# source_id == gaia edr3 source id\n#   is_good == flag for good astrometric sources (0.0 = bad, 1.0 = good)\n# confidence == confidence in prediction.\n\nspark.catalog.listTables()",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_564599077",
-		"id": "20210831-151608_918987455",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7194"
-	}, {
-		"title": "Open_eDR3/WD_catalogue",
-		"text": "%spark.pyspark\n\n# define the data source and select required columns\nsqlContext.clearCache()\n\ndef initial_query(columns, how, limit = None, tablename = 'dcr_raw_sources', make_queryable = False, return_table = False):\n    if how == 'NoLimit':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source')\n    elif how == 'limited':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source \\\n                                        WHERE (1/parallax < limit)')\n    elif how == 'sampled':\n        sample_filter = f' WHERE MOD(source_id, {limit}) = 0'\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source \\\n                                    {sample_filter}')\n\n    else: raise NameError('how must equal: [\"NoLimit\", \"limited\"]')\n    \n    if make_queryable:\n        raw_sources_df.createOrReplaceTempView(tablename)\n        print(f'data at: {tablename}')\n    if return_table:\n        return raw_sources_df\n        \ndef applyQualityControl(catalogue, QCcatalogue, threshold = 0.0):\n    df = spark.sql(f'SELECT a.*, b.is_good, b.confidence \\\n                FROM {catalogue} as a, \\\n                {QCcatalogue} as b\\\n                WHERE (b.source_id == a.source_id AND b.is_good == 1.0 AND b.confidence > {threshold})')\n    return df\n    \ndef addAbsoluteMag(df, passband = 'g'):\n    return df.withColumn(f'm_{passband}', col(f'phot_{passband}_mean_mag') \\\n                             + 5.0*log10(col('parallax')/100))\n        \ndef get_data(wd_filename, makeQueryable = 'dcr_raw_sources',\n             qualityControl = False, limit = 5000, threshold = 0.0,\n             addAbsolute = False):\n    ''' Gets a subsample of eDR3 data and appends the wds. (labelled) '''\n    \n    df = initial_query(columns = return_columns(how = 'str'), how = 'sampled', limit = limit, return_table = True)\n    df = df.select(return_columns()).withColumn('is_wd', lit(0))\n\n    # open the WD catalogue and select required columns\n    wd = sqlContext.read.format('com.databricks.spark.csv').options(\n    header='true', inferschema='true').load(wd_filename)\n    # wd = wd.filter(col('parallax') > 0) # Change to extensive quality cut\n    wd = wd.select(return_columns()).withColumn('is_wd', lit(1))\n\n    df = df.union(wd.select(df.columns)) # Join WD's to background data ensuring matching column order\n    \n    if addAbsolute:\n        df = addAbsoluteMag(df = df, passband = 'g')\n    \n    if makeQueryable:\n        print(f'data queryable from {makeQueryable}')\n        df.createOrReplaceTempView(makeQueryable)\n        \n    print(df.columns)\n        \n    if qualityControl:\n        if not makeQueryable:\n            raise nameError('For quality control makeQueryable must be True')\n        df = applyQualityControl(catalogue = makeQueryable, QCcatalogue = 'dcr_spurious_sources', threshold = threshold)\n        df.createOrReplaceTempView(makeQueryable)\n    return df\n    \n# limit = 5000, [3,164,528 sources with 265,678 WD's]\n# limit = 5000, is_good, threshold == 0.5: [1,902,909 sources with XX WD's]\n# limit = 5000, is_good, [1,902,909 sources with 242,443 WD's]",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_403503339",
-		"id": "20210309-150222_690800288",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7195"
-	}, {
-		"text": "%spark.pyspark\ndf = get_data(wd_filename = f'file:///user/dcr/data/eDR3_wd_full.csv', makeQueryable = 'dcr_raw_sources',\n             qualityControl = True, limit = 3000, threshold = 0.5, addAbsolute = True)\n             \n# df.count()",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"results": {
-				"0": {
-					"graph": {
-						"mode": "table",
-						"height": 90,
-						"optionOpen": false
-					}
-				}
-			},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_-511319888",
-		"id": "20210831-172158_569379680",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7196"
-	}, {
-		"title": "define plotTypes",
-		"text": "%spark.pyspark\ndef selectPlotType(x, y, plotType = 'scatter', ax = False, cmap = None, color = None,\n                  label = None, s = 1, white_nan = False, bins = 100, cbar = True,\n                  alpha = 1.0):\n    if plotType == 'scatter':\n        scatter(x, y, ax = ax,\n                color = color, label = label, s = s, alpha = alpha)\n    elif plotType == 'kdeHeatmap':\n         kdeHeatmap(x, y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2Dhist':\n         hist2d(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2DhistSub':\n         hist2dSubplots(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    else: raise nameError('plotType must be one of [\"scatter\", \"kdeHeatmap\", \"2Dhist\", 2DhistSub]')\n        \ndef kdeHeatmap(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a kdeHeatmap'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n\n    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents\n    nbins=bins\n    k = kde.gaussian_kde([x,y])\n    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]\n    zi = k(np.vstack([xi.flatten(), yi.flatten()]))\n\n    # Make the plot\n    im = ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto', cmap = cmap)\n    \n#     if cbar:\n#         add_colorbar(cmap = cmap, im = im)\n    \ndef scatter(x,y, ax = False, color = None, label = None, s = 1, alpha = 1.0):\n    '''creates a scatter plot'''\n    if not ax:\n        ax = plt.figure(111)\n    ax.scatter(x, y, marker = '.', s = s, c = color, label = label, alpha = alpha)\n    \n\ndef add_colorbar(cmap, im):\n    import matplotlib.pyplot as plt\n    h = im[0]\n    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm)\n    \ndef hist2dSubplots(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        addColorbarSubplots(cmap = cmap, im = im, ax = ax)\n\ndef addColorbarSubplots(cmap, im, ax):\n    from mpl_toolkits.axes_grid1 import make_axes_locatable\n    h = im[0]\n    divider = make_axes_locatable(ax)\n    cax = divider.append_axes('right', size='5%', pad=0.05)\n    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm, cax = cax)\n    \n    \ndef hist2d(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        add_colorbar(cmap = cmap, im = im)\n    \ndef whiteNan(cmap):\n    '''adds white base for colormaps'''\n    \n    from matplotlib import cm\n    from matplotlib.colors import ListedColormap\n    \n    cmap = cm.get_cmap(cmap, 256)\n    newcolors = cmap(np.linspace(0, 1, 256))\n    white = np.array([1, 1, 1, 0])\n    newcolors[:2, :] = white\n    cmap = ListedColormap(newcolors)\n    return cmap",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_1082615170",
-		"id": "20210905-094434_1989068247",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7197"
-	}, {
-		"title": "def CAMD",
-		"text": "%spark.pyspark\ndef CAMD(passbands, catalogue, classes, colors = ['k', 'darkred', 'darkblue'], ms = 1, \n         labels = None, plotType = 'scatter', cmap = 'cividis', bins = [100, 100], colorbar = True,\n         limit = 10000, alpha = 1.0, save = False):\n    '''plot an observational Hertzsprung-Russell diagram (aka colour / absolute magnitude diagram)\n    for the unclassified sample to show the problem,\n    include the photometric consistency filter to show the problem is astrometric in addition to photometric '''\n    \n    import matplotlib.pylab as plt\n    fig, ax = plt.subplots(figsize = (7.0, 9.0))\n    \n    quick_plot_filter = f' AND MOD(a.source_id, {limit}) = 0'\n    tmp_df = spark.sql(f'SELECT a.phot_{passbands[0]}_mean_mag + 5.0*LOG10(a.parallax/100.0) \\\n                        AS m_{passbands[0]}, a.{passbands[1]}, a.is_wd FROM {catalogue} as a')\n    # #                 {quick_plot_filter}')\n    tmp_df = tmp_df.toPandas().dropna()\n\n    for c, value in enumerate(classes):\n        if type(ms) == list:\n            s = ms[c]\n        else: s = ms\n        if type(labels) == type(None):\n            label = value\n        else: label = labels[c]\n        color = None\n        if plotType == 'scatter':\n            color = colors[c]\n        else: cmp = cmap[c]; bns = bins[c]\n\n        tmp = tmp_df[tmp_df['is_wd'] == c]\n        selectPlotType(x = tmp[f'{passbands[1]}'], y = tmp[f'm_{passbands[0]}'], \n                       plotType = plotType, ax = ax, cmap = cmp, color = color,\n                       label = label, s = s, white_nan = True, bins = bns, cbar = colorbar)\n        \n    plt.ylim(18.0, -5.0)\n    plt.xlim(-1, 2.0)\n    plt.ylabel('Stellar brightness (absolute G magnitude) -->', fontsize = 16)\n    plt.xlabel('<-- Stellar temperature (G - RP magnitude)', fontsize = 16)\n    if plotType == 'scatter':\n        lgnd = plt.legend(fontsize = 12, markerscale = 1)\n    if save:\n        if not dev_run:\n            savefigs(save)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936970_704965535",
-		"id": "20210905-094348_490913450",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7198"
-	}, {
-		"title": "plot CAMD",
-		"text": "%spark.pyspark\n# CAMD(passbands = ['g', 'g_rp'], catalogue = 'dcr_raw_sources', alpha = 0.5, \n#      cmap = ['cividis', 'inferno'], colors = ['k', 'darkblue'], \n#      classes = ['Other Source Type', 'White Dwarf'], ms = 4, limit = 5000,\n#      plotType = 'kdeHeatmap', bins = [200, 100], save = False)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": false,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936971_-1161983760",
-		"id": "20210905-094547_1870473742",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7199"
-	}, {
-		"title": "def spacialDistributionSubplotHex",
-		"text": "%spark.pyspark\ndef spacialDistributionSubplotHex(class_val = 0, label = None, limit = None, labelCol = 'label', color = 'k', \n                                save = False, vmax = None, cmap = ['cividis', 'cividis'],\n                                catalogue = 'dcr_training_sources', fontsize = 14, scale = [None, None]):\n\n    plt.figure(2, figsize = (24.18, 7.0))\n    plt.rcParams['font.size'] = fontsize\n    \n    dat = spark.sql(f'SELECT a.{labelCol}, a.l, a.b FROM {catalogue} as a')\n    dat = dat.withColumn('l_rad', (col('l') - 180.0) * np.pi / 180.0)\\\n                .withColumn('b_rad', (col('b') * np.pi / 180.0))\\\n                    .select(['l_rad', 'b_rad', labelCol])\\\n                        .toPandas()\n    \n    print('data in Pandas')\n    for i, value in enumerate(class_val):\n        tmp = dat[dat[labelCol] == value]\n        plt.subplot(1,2,i+1, projection='aitoff')\n        plt.grid(True)\n        if vmax:\n            vm = vmax[i]; extend = 'max'\n        else: vm = None; extend = None\n        plt.title(f'{label[i]}', fontsize = fontsize+4)\n        image = plt.hexbin(tmp['l_rad'].values, tmp['b_rad'].values, cmap=cmap[i], \n                   gridsize=100, mincnt=1, bins=scale[i], vmax = vm, alpha = 1.0) \n        cb = plt.colorbar(image, extend = extend, spacing = 'proportional', ) \n        print(cb.boundaries)\n    plt.tight_layout()\n    if save:\n        if not dev_run:\n            savefigs(save)\n    plt.show()",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936971_115939493",
-		"id": "20210920-150458_1036002619",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7200"
-	}, {
-		"title": "spacial Distribution Hex",
-		"text": "%spark.pyspark\nspacialDistributionSubplotHex(class_val = [1,0], label = ['White Dwarfs', 'Other Source Type'],\n                           color = ['k', 'darkred'], limit = 5000, labelCol = 'is_wd', \n                           catalogue = 'dcr_raw_sources', cmap = ['inferno', 'cividis'],\n                           fontsize = 14, scale = [None, 'log'],\n                           save = False)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": false,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936971_2019796155",
-		"id": "20210905-094627_712961351",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7201"
-	}, {
-		"title": "Split into Training and test data",
-		"text": "%spark.pyspark\n\ndef split_training_data(df, columns = '*', label = None, split = 0.8, seed = 0):\n    '''splits df into trianing and test set. \"label\" [type int] creates a column for classification,\n    if label is present set label = None'''\n    \n    # Select relevent columns\n    df = df.select(columns)\n    if label != None:\n        df = df.withColumn('label', lit(label))\n    # Split the data into train and test with seed for repeatability\n    train, test = df.randomSplit([split, 1-split], seed)\n    \n    return train, test\n\ntrain, test = split_training_data(df, columns = return_training_columns(),\n                                         split = 0.8, seed = 42)\n\n# count = test.count()                   \n# print(count, count*5)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936979_911410470",
-		"id": "20210309-152737_543777343",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7202"
-	}, {
-		"title": "FeatureDenseVectors",
-		"text": "%spark.pyspark\ndef transform_datasets(df, ignore = [], combine = True):\n    '''combines two dataframes into a single transformed dataFrame for spark.ml \n    classifier for training or validation'''\n    \n    # Annotate and transform appropriate to the input required by the classifier's API.\n    # Need a dataframe with labels and features: use vector assembler.\n    assembler = VectorAssembler(inputCols=[i for i in df.columns if i not in ignore], \n                            outputCol = 'features', handleInvalid = 'skip')\n    \n\n    df = assembler.transform(df)\n    return df\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936979_-1771665270",
-		"id": "20210830-161940_1525481386",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7203"
-	}, {
-		"text": "%md\n\n# Normalisation\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"tableHide": false,
-			"editorSetting": {
-				"language": "markdown",
-				"editOnDblClick": true,
-				"completionKey": "TAB",
-				"completionSupport": false
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/markdown",
-			"fontSize": 9,
-			"editorHide": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936979_1935028111",
-		"id": "20210830-111112_1646211749",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7204"
-	}, {
-		"title": "getScalar",
-		"text": "%pyspark\n\ndef getScaler(scalerType):\n    '''Returns correct scaler for chosen normalization.'''\n    \n    if scalerType == 'standard': \n        from pyspark.ml.feature import StandardScaler\n        Scaler = StandardScaler(withMean=True, withStd = True)\n    elif scalerType == 'MinMax':\n        from pyspark.ml.feature import MinMaxScaler\n        Scaler = MinMaxScaler()\n    else: raise NameError(f'scalerType can be either \"MinMax\" or \"standard\" not {scaler}')\n    return Scaler\n\n\ndef getScalerModel(df, scalerType = 'standard', featuresCol = 'features',\n                       outCol = 'norm_features', save = False):\n    '''normalizes DenseVectors for MLlib'''\n\n    scaler = getScaler(scalerType = scalerType) # Get scaler\n    scaler.setInputCol(featuresCol)         # Set feature column name\n    scaler.setOutputCol(outCol)\n    model = scaler.fit(df)\n    if save:\n        model.write().overwrite().save(f'{save}/{scalerType}_normalisation_model')\n        print(f'Normalisation model saved at \"{save}/{scalerType}_normalisation_model\"')\n    return model\n\ndef normaliseData(df, model,):\n    '''normalizes featureCol of df using model from \"getScalerModel\" '''\n\n    return model.transform(df)\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936979_-163568613",
-		"id": "20210830-111127_619701551",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7205"
-	}, {
-		"title": "getTrainTest",
-		"text": "%pyspark\ndef dataSparkML(train, test, labelCol = 'labels', featuresCol = 'features', \n                normalise = False, scalerType = 'standard', save = False,\n                nonFeatureCols = None):\n    '''get train and test dataset for input using pyspark.ml'''\n    \n    train = transform_datasets(df=train, ignore = nonFeatureCols)\n    test = transform_datasets(df = test, ignore = nonFeatureCols)\n    \n    if normalise:\n        # We rename featuresCol to maintain col name for later analysis\n        model = getScalerModel(train.withColumnRenamed(featuresCol, 'inputFeatures'),\n                               scalerType = scalerType, featuresCol = 'inputFeatures', \n                               outCol = featuresCol, save = save)\n        \n        # Normalise each dataset with the training data distributions\n        train = normaliseData(train.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        test  = normaliseData( test.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        print('data is normalised using training data distributions')\n        # print(f'Training data = {train.count()} sources')\n    \n    return (train, test)\n    \nnonFeatureCols = ['is_wd', 'source_id', 'ra', 'dec', 'l', 'b']\n    \ntrain, test = dataSparkML(train, test, labelCol = 'is_wd', featuresCol = 'features', \n                           save = False, normalise = True, scalerType = 'standard', \n                           nonFeatureCols = nonFeatureCols)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936979_-1820533697",
-		"id": "20210830-161927_1357065778",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7206"
-	}, {
-		"title": "Train_model",
-		"text": "%pyspark\n# This cell does the business, given the data and training sets. Follows the example Python code at \n# https://spark.apache.org/docs/3.1.2/api/python/pyspark.ml.html#pyspark.ml.classification.RandomForestClassifier\n\ndef train_model(save = False):\n    # instantiate a trained RF classifier, seeded for repeatability at this stage:\n    rf = RandomForestClassifier(featureSubsetStrategy = 'sqrt', featuresCol = 'features', labelCol = 'is_wd',\n                                numTrees = 100, impurity = 'entropy', maxDepth = 10, minInstancesPerNode = 1,\n                                seed = 42)\n    model = rf.fit(train)\n\n    if save:\n        if not dev_run:\n            prefix_save = f'{user_home}/WD_detection/models/'\n            print(f'{prefix_save}/{save}/')\n            model.write().overwrite().save(f'{prefix_save}/{save}/randomForestClassifier/')\n    return model\n    \nmodel = train_model(save = False)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936980_1831255106",
-		"id": "20210309-152736_1954453041",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7207"
-	}, {
-		"title": "MLlib_confusion_matrix",
-		"text": "%spark.pyspark\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pylab as plt\nfrom collections import Counter\n\nclass MLlib_confusion_matrix():\n    '''subclass to plot confusion matrix'''\n    def __init__(self, df, labelCol = 'label', classes = None, normalize = True):\n        self.df               = df\n        self.getLabelCol      = labelCol\n        self.grouped          = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix           = self.getConfusionMatrix()\n        self.normMatrix       = self.getNormConfusionMatrix()\n        self.confusion_matrix = self.confusionMatrix(classes, normalize)\n\n    def __repr__(self) : return f\"\"\"Class for plotting confusion matrix {self.normMatrix}\"\"\"\n\n    def getConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                                 (self.grouped.prediction == j)]['count'].values\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  c\n        return matrix\n\n    def getNormConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                        (self.grouped.prediction == j)]['count'].values\\\n                            /sum(self.grouped[(self.grouped[self.getLabelCol] == i)]['count'])\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  np.round(c , 4)\n        return matrix\n    \n    def confusionMatrix(self, classes = None, normalize = True, save = False):\n        '''prints rich version of confusion matrix'''\n        if normalize: matrix = self.normMatrix\n        else: matrix = self.matrix\n        if classes == None:\n            classes = range(len(matrix))\n\n        N_classes = range(len(classes))\n        plt.rcParams['figure.figsize'] = (6,6)\n\n        plt.imshow(matrix, cmap = 'Greens', alpha = 0.75)\n        for i in N_classes: # Add values to max pooling\n            for j in N_classes:\n                text = plt.text(j, i, matrix[i][j],\n                               ha=\"center\", va=\"center\", color=\"k\", fontsize = 20)\n\n        #Add thick line to matrix\n        axis = plt.gca()\n        axis.set_yticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.set_xticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.yaxis.grid(True, which='minor', color = 'k', lw = 2)\n        axis.xaxis.grid(True, which='minor', color = 'k', lw = 2)\n        plt.xticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.yticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.xlabel('Predicted Class', fontsize = 16)\n        plt.ylabel('True Class', fontsize = 16)\n        if save:\n            if not dev_run:\n                savefigs(save)\n                savetxt(matrix, save)\n        \n        \nclass MLlibMultiClassEvaluator(MLlib_confusion_matrix):\n    '''class to calculate parameters of NN performance for binary classification'''\n    \n    def __init__(self, df, labelCol = 'label'):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        # self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        \n    # def __len__(self)         : return self.df.count()\n    # def __repr__(self)        : return f\"\"\"Evaluate ML performance for {len(self)} datapoints.\"\"\"\n    \n    def getAnalysis(self):\n        '''returns a pd.DataFrame for analysis'''\n        data = self.df.select(self.getLabelCol,'probability', 'prediction').toPandas()\n        for i in range(max(data[self.getLabelCol])+1):\n            data[f'prob'] = [max(j) for j in data.probability]\n        return data\n    \n    def getTruePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        tp = {}\n        for cat in range(len(conMat)):\n            tp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] == data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    tp[cat].append(tmp[cat])\n            return tp\n        \n        \n    def getFalsePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fp = {}\n        for cat in range(len(conMat)):\n            fp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)].prediction)\n                for cat in range(len(conMat)):\n                    fp[cat].append(tmp[cat])\n            return fp        \n        \n    def getFalseNegatives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how False Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fn = {}\n        for cat in range(len(conMat)):\n            fn[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    fn[cat].append(tmp[cat])\n            return fn\n        \n    def getPrecision(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate precision'''\n        precision = {}; true_positives = self.getTruePositives(step); \n        false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        precision = {}\n        for cat in range(len(conMat)):\n            precision[cat] = conMat[cat][cat]\n            for cat in range(len(conMat)):\n                precision[cat] = [tp / (tp+fp) for tp, fp in zip(true_positives[cat],false_positives[cat])]\n        return precision\n    \n    def getRecall(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate recall'''\n        conMat = self.getConfusionMatrix()\n        recall = {}; true_positives = self.getTruePositives(step); \n        false_negatives = self.getFalseNegatives(step)\n        for cat in range(len(conMat)):\n            recall[cat] = []\n            for cat in range(len(conMat)):\n                recall[cat] = [tp / (tp+fn) for tp, fn in zip(true_positives[cat],false_negatives[cat])]\n        return recall\n    \n    \nclass plottingThreshold(MLlibMultiClassEvaluator):\n    '''subclass of \"threshold\" for various plots of useful threshold parameters.'''\n    \n    def __repr__(self): return f\"\"\"Plotting software for 'threshold' objects\"\"\"\n    def __init__(self, df, labelCol = 'label', classLabels = False):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        self.classLabels   = classLabels\n        \n        \n    def getAxes(self,ax):\n        if ax == None:\n            ax = plt.subplot(111)\n        return ax\n\n    def plot_true_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), normalize = True, \n                            legend = True, save = False):\n        ax = self.getAxes(ax); true_positives = self.getTruePositives(step); \n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if normalize == True:\n                y = [i/max(true_positives[cat]) for i in true_positives[cat]]\n                ax.set_ylabel('Fraction of Total True Positives -->')\n            else:\n                y = [i/len(self.data[self.data.true_label == cat]) for i in true_positives[cat]]\n                ax.set_ylabel('True Positives -->')\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        if save:\n            if not dev_run:\n                savetxt(step, save+'_threshold')\n                savetxt(y, save+'_true_positives')\n\n    def plot_false_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                            legend = True, save = False):\n        ax = self.getAxes(ax); false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if max(false_positives[cat]) != 0:\n                y = [i/max(false_positives[cat]) for i in false_positives[cat]]\n            else: y = [i for i in false_positives[cat]]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('<-- Fraction of Total False Positives')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_false_positives')\n\n    def plot_precision(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                        legend = True, save = False):\n        ax = self.getAxes(ax); precision = self.getPrecision(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = precision[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Precision -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_precision')\n\n    def plot_recall(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                    legend = True, save = False):\n        ax = self.getAxes(ax); recall = self.getRecall(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = recall[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Recall -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_recall')\n        \n    def getLabels(self, count):\n        if self.classLabels:\n            label = self.classLabels[count]\n        else:\n            label = count\n        return label\n\n    def threshold_subplots(self, step = np.arange(0.0, 0.95, 0.01), figsize=(15, 8), save = False):\n        import matplotlib.gridspec as gridspec\n        fig = plt.figure(figsize = figsize)\n        gs = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)\n        ax1 = fig.add_subplot(gs[0, 0])\n        ax2 = fig.add_subplot(gs[0, 1])\n        ax3 = fig.add_subplot(gs[1, 0])\n        ax4 = fig.add_subplot(gs[1, 1])\n\n        axs = [ax1, ax2, ax3, ax4]\n        self.plot_precision      (ax = axs[0], step = step, legend = False, save = save)\n        self.plot_recall         (ax = axs[1], step = step, legend = False, save = save)\n        self.plot_true_positives (ax = axs[2], step = step, legend = True , save = save)\n        self.plot_false_positives(ax = axs[3], step = step, legend = True , save = save)\n        plt.tight_layout()\n        \n        if save:\n            if not dev_run:\n                savefigs(save)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": true,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936980_1987826283",
-		"id": "20210830-112150_779544862",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7208"
-	}, {
-		"title": "Define EvaluateModel",
-		"text": "%spark.pyspark\ndef evaluateModel(rfModel, df, labelCol = 'label', evaluate = False,\n                  normalise = True, classLabels = False, save = False,\n                  step = np.arange(0.5, 0.99, 0.05)):\n    '''Apply a NN to new data, with the option to evaluate if test dataset'''\n    \n    # compute accuracy on the test set\n    result = rfModel.transform(df)\n#     print(\"Test set accuracy = \" + str(evaluator.evaluate(predictionAndLabels)))\n    \n    if evaluate:\n        # predictionAndLabels = result.select(\"prediction\", labelCol)\n        # evaluator = MulticlassClassificationEvaluator(metricName=\"accuracy\")\\\n        #                     .setLabelCol(labelCol)\n        # Call MLlib_confusion_matrix class to plot confusion matrix\n        print(save+'_confusion_matrix')\n        res = MLlib_confusion_matrix(result, labelCol = labelCol)\n        res.confusionMatrix(classes = ['Bad', 'Good'], normalize = normalise, save = save+'_confusion_matrix')\n        \n        if evaluate != 'minimal':\n        \n            # Call plottingThreshold to explore the effect of Thresholding\n            plottingThreshold(result, labelCol = labelCol, classLabels = classLabels)\\\n                .threshold_subplots(step = step, save = save+'_thresholds')\n\n    return result",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": false,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936980_887794291",
-		"id": "20210309-153636_2120767412",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7209"
-	}, {
-		"title": "Evaluate Model",
-		"text": "%spark.pyspark\nresult = evaluateModel(rfModel = model, df = test, normalise = True,  evaluate = True, \n                       labelCol = 'is_wd',  classLabels = ['Other Sources', \"Known WD's\"],\n                       save = False)\n                       \nresult.createOrReplaceTempView('ML_res')",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936980_1882841784",
-		"id": "20210830-112457_472468210",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7210"
-	}, {
-		"text": "%md\n\n# For dev_run: Disable all cells below this\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"tableHide": false,
-			"editorSetting": {
-				"language": "markdown",
-				"editOnDblClick": true,
-				"completionKey": "TAB",
-				"completionSupport": false
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/markdown",
-			"fontSize": 9,
-			"editorHide": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936981_-1753997832",
-		"id": "20210921-153241_2072461646",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7211"
-	}, {
-		"title": "BinaryClassifier",
-		"text": "%spark.pyspark\ndef binaryClassifier(df, positives = 1, labelCol = 'label', return_df = True, cache = True):\n    '''splits the df into objects classified correctly \"true\" and wrongly \"false\".\n    Returns two df if \"return_df\" = True and/or caches both if \"cache\" = True'''\n    \n    # Split data into true and falsely classified data\n    tp = df.filter((col(labelCol)==col('prediction')) & (col(labelCol) == positives))\n    tn = df.filter((col(labelCol)==col('prediction')) & (col(labelCol) != positives))\n    fp = df.filter((col(labelCol)!=col('prediction')) & (col(labelCol) == positives))\n    fn = df.filter((col(labelCol)!=col('prediction')) & (col(labelCol) != positives))\n    \n    if cache == True:\n        tp.createOrReplaceTempView('true_positives')\n        tn.createOrReplaceTempView('true_negatives')\n        fp.createOrReplaceTempView('false_positives')\n        fn.createOrReplaceTempView('false_negatives')\n    if return_df == True:\n        return (tp, tn, fp, fn)\n    else: return 0\n    \ntp, tn, fp, fn = binaryClassifier(result, labelCol = 'is_wd', cache = True)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936981_1854598493",
-		"id": "20210830-112550_165957380",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7212"
-	}, {
-		"title": "plot resCAMD",
-		"text": "%spark.pyspark\ndef resCAMD(passbands, catalogues, colors = ['k', 'darkred', 'darkblue'], ms = 1, \n         labels = None, plotType = 'scatter', cmap = 'cividis', bins = [100, 100], colorbar = True,\n         limit = 10000, alpha = 1.0, save = False):\n    '''plot an observational Hertzsprung-Russell diagram (aka colour / absolute magnitude diagram)\n    for the unclassified sample to show the problem,\n    include the photometric consistency filter to show the problem is astrometric in addition to photometric '''\n    \n    import matplotlib.pylab as plt\n    fig, ax = plt.subplots(figsize = (9.0, 9.0))\n    \n    quick_plot_filter = f' AND MOD(a.source_id, {limit}) = 0'\n\n    for c, catalogue in enumerate(catalogues):\n        if type(ms) == list:\n            s = ms[c]\n        else: s = ms\n        if type(labels) == type(None):\n            label = catalogue\n        else: label = labels[c]\n        color = None\n        \n        if not type(plotType) == str:\n            pType = plotType[c]\n        else: pType = plotType\n        \n        if pType == 'scatter':\n            color = colors[c]; cmp = None; bns = None\n        else: cmp = cmap[c]; bns = bins[c]\n        \n        tmp = spark.sql(f'SELECT m_{passbands[0]}, {passbands[1]} FROM {catalogue}')\n        \n        tmp = tmp.toPandas().dropna()\n        \n        selectPlotType(x = tmp[f'{passbands[1]}'], y = tmp[f'm_{passbands[0]}'], \n                       plotType = pType, ax = ax, cmap = cmp, color = color,\n                       label = label, s = s, white_nan = True, bins = bns, cbar = colorbar)\n        \n    plt.ylim(21.0, -3.0)\n    plt.xlim(-1, 3)\n    plt.ylabel('Stellar brightness (absolute G magnitude) -->', fontsize = 16)\n    plt.xlabel('<-- Stellar temperature (G - RP magnitude)', fontsize = 16)\n    plt.legend()\n    if plotType == 'scatter':\n        lgnd = plt.legend(fontsize = 12, markerscale = 1)\n#         for i in range(len(catalogues)):\n#             lgnd.legendHandles[i]._sizes = [25]\n    if save:\n        if not dev_run:\n            savefigs(save)\n\n\ncatalogues = ['true_positives', 'true_negatives', 'false_positives', 'false_negatives']\nresCAMD(passbands = ['g', 'g_rp'], catalogues = catalogues, alpha = 0.5, \n     cmap = ['inferno', 'cividis'], colors=['blue', 'k', 'darkred', 'slategrey'],\n     ms = [2,2,55,55], limit = 5000, plotType = ['kdeHeatmap', 'kdeHeatmap', 'scatter','scatter'],\n     bins = [100, 100, 100, 100], colorbar = True, save = False)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": false,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936981_726267582",
-		"id": "20210905-095410_1512225979",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7213"
-	}, {
-		"title": "Feature Importance",
-		"text": "%spark.pyspark\ndef feature_importance(model, save = False):\n    columns = return_training_columns()\n    FI = list(model.featureImportances)\n    # for i in range(len(FI)):\n    #     print(columns[i+1], FI[i])\n\n    plt.rcParams['figure.figsize'] = 16,5\n    plt.bar(columns[1:-1], FI, color = 'darkslategrey')\n    plt.xticks(rotation=90)\n    plt.ylabel('Importance', fontsize = 15)\n    plt.xlabel('Feature', fontsize = 15)\n    if save:\n        if not dev_run:\n            savefigs(save)\n            savetxt([columns[1:-1], FI], filename = 'feature_importance')\n    plt.show()\n    return FI\n\nfeatureImport = feature_importance(model, save = False)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"editorHide": false,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936981_1616693374",
-		"id": "20210830-114415_100597012",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7214"
-	}, {
-		"text": "%spark.pyspark\ndef plot_probabilities(df, colors = ['darkblue', 'red'], bins = 25, alpha = 1.0,\n                       label = ['class0', 'class1'], class_value = [0,1],\n                      fontsize = 14, ec = 'k', save = False):\n    '''histogram of the classification probabilities: cf. GCNS paper Figure 3'''\n\n    plt.figure(1, figsize = (9.7, 6.0))\n    dat = df.select(['is_wd', 'probability']).toPandas()\n    dat['probability'] = [j[1] for j in dat['probability'].values]\n    tmp = np.zeros(len(class_value), dtype = 'object')\n    for i, value in enumerate(class_value):\n        tmp[i] = dat[dat['is_wd'] == i]['probability']\n    plt.hist(tmp, color = colors, bins=bins,\n                           log = True, label = label, alpha = alpha, ec = ec)\n    plt.xlabel('WD Probability -->', fontsize = fontsize)\n    plt.ylabel('N', fontsize = fontsize)\n    plt.xlim(0,1.0)\n    plt.legend(label)\n    if save:\n        if not dev_run:\n            savefigs(save)\n    \nplot_probabilities(df = result, bins = 20, colors = ['grey', 'goldenrod'], alpha = 1, ec = 'k',\n                   label = [\"Non-WD's\", \"WD's\"], save = False)",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936981_-1794546871",
-		"id": "20210830-114413_629290693",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7215"
-	}, {
-		"text": "%spark.pyspark\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936982_671339645",
-		"id": "20210309-154111_1539950579",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7216"
-	}, {
-		"text": "%spark.pyspark\n",
-		"user": "gaiauser",
-		"dateUpdated": "2021-10-05T10:48:56+0000",
-		"config": {
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"colWidth": 12,
-			"editorMode": "ace/mode/python",
-			"fontSize": 9,
-			"title": true,
-			"results": {},
-			"enabled": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1633430936982_-1575538360",
-		"id": "20210309-152731_1445922235",
-		"dateCreated": "2021-10-05T10:48:56+0000",
-		"status": "READY",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:7217"
-	}],
-	"name": "WD_detection_dev",
-	"id": "2GJASH3Y1",
-	"noteParams": {},
-	"noteForms": {},
-	"angularObjects": {
-		"md:shared_process": [],
-		"spark:gaiauser:": []
-	},
-	"config": {
-		"isZeppelinNotebookCronEnable": false,
-		"looknfeel": "default",
-		"personalizedMode": "false"
-	},
-	"info": {}
+  "paragraphs": [
+    {
+      "title": "Intro",
+      "text": "%md\n\n# Training a Random Forest to identify White Dwarf Stars\n\nUses the list of White Dwarf stars from https://arxiv.org/abs/1807.03315 - WD catalogue henceforth -  to train a Random Forest.\nThe method is similar to Section 5.8 from https://arxiv.org/abs/2012.02061 - GCNS henceforth. (GCNS = Gaia Catalogue of Nearby Stars)\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946441_-61264849",
+      "id": "20210309-150210_1093711567",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "focus": true,
+      "$$hashKey": "object:17993"
+    },
+    {
+      "title": "Import_modules",
+      "text": "%spark.pyspark\n\nimport numpy as np\nimport pandas as pd\nimport pyspark.ml as ml\nfrom scipy.stats import kde\nimport matplotlib.pylab as plt\nfrom collections import Counter\nfrom pyspark.ml.feature import VectorAssembler\nfrom pyspark.sql.types import ArrayType, DoubleType\nfrom pyspark.sql.functions import lit, col, when, udf, greatest, log10\nfrom pyspark.ml.classification import RandomForestClassifier\nfrom pyspark.ml.evaluation import MulticlassClassificationEvaluator\n            \nuser_home = 'file:///user/dcr/'\ndev_run = True",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946443_-1731710046",
+      "id": "20210309-151423_1062475189",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:17994"
+    },
+    {
+      "title": "save functions",
+      "text": "%spark.pyspark\ndef savefigs(filename, dpi = 450):\n    plt.savefig(f'/user/dcr/WD_detection/plots/{filename}.png',\n                dpi=dpi, bbox_inches = 'tight')\n    plt.savefig(f'/user/dcr/WD_detection/plots/{filename}.pdf',\n                dpi=dpi, bbox_inches = 'tight')\n                \ndef savetxt(df, filename):\n    if type(df) == list:\n        import json\n        with open(f'/user/dcr/WD_detection/plots/data/{filename}.json', 'w') as f:\n            json.dump(df, f, indent=2)\n            \ndef opentxt(filename):\n    if filename.split('.')[-1] == 'json':\n        import json\n        with open(filename, 'r') as f:\n            score = json.load(f)\n            \n\ndef return_columns(how = 'list'):\n    if how == 'list':\n        return ['source_id', 'parallax', 'ra', 'dec', 'l', 'b', 'phot_g_mean_flux',\n                'phot_g_mean_mag', 'phot_bp_mean_flux', 'phot_bp_mean_mag', 'phot_rp_mean_flux',\n                'phot_rp_mean_mag', 'bp_rp', 'bp_g', 'g_rp']\n    elif how =='str':\n        return 'source_id, parallax, ra, dec, l, b, phot_g_mean_flux,\\\n                phot_g_mean_mag, phot_bp_mean_flux, phot_bp_mean_mag, phot_rp_mean_flux,\\\n                phot_rp_mean_mag, bp_rp, bp_g, g_rp'\n                \n                \ndef return_training_columns(how = 'list'):\n    if how == 'list':\n        # return ['source_id', 'parallax', 'phot_g_mean_flux', 'phot_g_mean_mag',\n        #     'phot_bp_mean_flux', 'phot_bp_mean_mag', 'phot_rp_mean_flux',\n        #     'phot_rp_mean_mag', 'bp_rp', 'bp_g', 'g_rp', 'm_g', 'is_wd']\n         return ['source_id', 'parallax', 'bp_rp', 'bp_g', 'g_rp', 'm_g', 'is_wd']\n    elif how =='str':\n        # return 'source_id, parallax, phot_g_mean_flux, phot_g_mean_mag,\\\n        #         phot_bp_mean_flux, phot_bp_mean_mag, phot_rp_mean_flux,\\\n        #         phot_rp_mean_mag, bp_rp, bp_g, g_rp, m_g, is_wd'\n        return 'source_id, parallax, bp_rp, bp_g, g_rp, m_g, is_wd'",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946443_2090921325",
+      "id": "20210922-132626_1396769553",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:17995"
+    },
+    {
+      "title": "makeSpuriousSourceQueryable",
+      "text": "%spark.pyspark\n\ndef vector_to_array(col):\n    def to_array_(v):\n        return v.toArray().tolist()\n    # Important: asNondeterministic requires Spark 2.3 or later\n    # It can be safely removed i.e.\n    # return udf(to_array_, ArrayType(DoubleType()))(col)\n    # but at the cost of decreased performance\n    return udf(to_array_, ArrayType(DoubleType())).asNondeterministic()(col)\n    \n    \ndef queryableSpuriousSources(filename):\n    '''opens result from ML_cuts and makes queryable '''\n\n    QC_cuts = spark.read.parquet('file:///user/dcr//ML_cuts/results/allDataMatchPS1.parquet')\n    QC_cuts = QC_cuts.withColumn(\"probability\", vector_to_array(col(\"probability\")))\\\n                       .select(['source_id', 'prediction'] + [col(\"probability\")[i] for i in range(2)])\\\n                        .withColumn('confidence', greatest(col('probability[0]'), col('probability[1]')))\\\n                        .select(['source_id', 'prediction', 'confidence'])\\\n                        .withColumnRenamed('prediction', 'is_good')\n     \n    QC_cuts.createOrReplaceTempView('dcr_spurious_sources')\n\nqueryableSpuriousSources(filename = 'file:///user/dcr//ML_cuts/results/allDataMatchPS1.parquet', )\n# source_id == gaia edr3 source id\n#   is_good == flag for good astrometric sources (0.0 = bad, 1.0 = good)\n# confidence == confidence in prediction.\n\nspark.catalog.listTables()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946443_-1595220831",
+      "id": "20210831-151608_918987455",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:17996"
+    },
+    {
+      "title": "Open_eDR3/WD_catalogue",
+      "text": "%spark.pyspark\n\n# define the data source and select required columns\nsqlContext.clearCache()\n\ndef initial_query(columns, how, limit = None, tablename = 'dcr_raw_sources', make_queryable = False, return_table = False):\n    if how == 'NoLimit':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source')\n    elif how == 'limited':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source \\\n                                        WHERE (1/parallax < limit)')\n    elif how == 'sampled':\n        sample_filter = f' WHERE MOD(source_id, {limit}) = 0'\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source \\\n                                    {sample_filter}')\n\n    else: raise NameError('how must equal: [\"NoLimit\", \"limited\"]')\n    \n    if make_queryable:\n        raw_sources_df.createOrReplaceTempView(tablename)\n        print(f'data at: {tablename}')\n    if return_table:\n        return raw_sources_df\n        \ndef applyQualityControl(catalogue, QCcatalogue, threshold = 0.0):\n    df = spark.sql(f'SELECT a.*, b.is_good, b.confidence \\\n                FROM {catalogue} as a, \\\n                {QCcatalogue} as b\\\n                WHERE (b.source_id == a.source_id AND b.is_good == 1.0 AND b.confidence > {threshold})')\n    return df\n    \ndef addAbsoluteMag(df, passband = 'g'):\n    return df.withColumn(f'm_{passband}', col(f'phot_{passband}_mean_mag') \\\n                             + 5.0*log10(col('parallax')/100))\n        \ndef get_data(wd_filename, makeQueryable = 'dcr_raw_sources',\n             qualityControl = False, limit = 5000, threshold = 0.0,\n             addAbsolute = False):\n    ''' Gets a subsample of eDR3 data and appends the wds. (labelled) '''\n    \n    df = initial_query(columns = return_columns(how = 'str'), how = 'sampled', limit = limit, return_table = True)\n    df = df.select(return_columns()).withColumn('is_wd', lit(0))\n\n    # open the WD catalogue and select required columns\n    wd = sqlContext.read.format('com.databricks.spark.csv').options(\n    header='true', inferschema='true').load(wd_filename)\n    # wd = wd.filter(col('parallax') > 0) # Change to extensive quality cut\n    wd = wd.select(return_columns()).withColumn('is_wd', lit(1))\n\n    df = df.union(wd.select(df.columns)) # Join WD's to background data ensuring matching column order\n    \n    if addAbsolute:\n        df = addAbsoluteMag(df = df, passband = 'g')\n    \n    if makeQueryable:\n        print(f'data queryable from {makeQueryable}')\n        df.createOrReplaceTempView(makeQueryable)\n        \n    print(df.columns)\n        \n    if qualityControl:\n        if not makeQueryable:\n            raise nameError('For quality control makeQueryable must be True')\n        df = applyQualityControl(catalogue = makeQueryable, QCcatalogue = 'dcr_spurious_sources', threshold = threshold)\n        df.createOrReplaceTempView(makeQueryable)\n    return df\n    \n# limit = 5000, [3,164,528 sources with 265,678 WD's]\n# limit = 5000, is_good, threshold == 0.5: [1,902,909 sources with XX WD's]\n# limit = 5000, is_good, [1,902,909 sources with 242,443 WD's]",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946444_-214498248",
+      "id": "20210309-150222_690800288",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:17997"
+    },
+    {
+      "text": "%spark.pyspark\ndf = get_data(wd_filename = f'file:///user/dcr/data/eDR3_wd_full.csv', makeQueryable = 'dcr_raw_sources',\n             qualityControl = True, limit = 3000, threshold = 0.5, addAbsolute = True)\n             \n# df.count()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 90,
+              "optionOpen": false
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946444_-1765165770",
+      "id": "20210831-172158_569379680",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:17998"
+    },
+    {
+      "title": "define plotTypes",
+      "text": "%spark.pyspark\ndef selectPlotType(x, y, plotType = 'scatter', ax = False, cmap = None, color = None,\n                  label = None, s = 1, white_nan = False, bins = 100, cbar = True,\n                  alpha = 1.0):\n    if plotType == 'scatter':\n        scatter(x, y, ax = ax,\n                color = color, label = label, s = s, alpha = alpha)\n    elif plotType == 'kdeHeatmap':\n         kdeHeatmap(x, y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2Dhist':\n         hist2d(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2DhistSub':\n         hist2dSubplots(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    else: raise nameError('plotType must be one of [\"scatter\", \"kdeHeatmap\", \"2Dhist\", 2DhistSub]')\n        \ndef kdeHeatmap(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a kdeHeatmap'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n\n    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents\n    nbins=bins\n    k = kde.gaussian_kde([x,y])\n    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]\n    zi = k(np.vstack([xi.flatten(), yi.flatten()]))\n\n    # Make the plot\n    im = ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto', cmap = cmap)\n    \n#     if cbar:\n#         add_colorbar(cmap = cmap, im = im)\n    \ndef scatter(x,y, ax = False, color = None, label = None, s = 1, alpha = 1.0):\n    '''creates a scatter plot'''\n    if not ax:\n        ax = plt.figure(111)\n    ax.scatter(x, y, marker = '.', s = s, c = color, label = label, alpha = alpha)\n    \n\ndef add_colorbar(cmap, im):\n    import matplotlib.pyplot as plt\n    h = im[0]\n    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm)\n    \ndef hist2dSubplots(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        addColorbarSubplots(cmap = cmap, im = im, ax = ax)\n\ndef addColorbarSubplots(cmap, im, ax):\n    from mpl_toolkits.axes_grid1 import make_axes_locatable\n    h = im[0]\n    divider = make_axes_locatable(ax)\n    cax = divider.append_axes('right', size='5%', pad=0.05)\n    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm, cax = cax)\n    \n    \ndef hist2d(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        add_colorbar(cmap = cmap, im = im)\n    \ndef whiteNan(cmap):\n    '''adds white base for colormaps'''\n    \n    from matplotlib import cm\n    from matplotlib.colors import ListedColormap\n    \n    cmap = cm.get_cmap(cmap, 256)\n    newcolors = cmap(np.linspace(0, 1, 256))\n    white = np.array([1, 1, 1, 0])\n    newcolors[:2, :] = white\n    cmap = ListedColormap(newcolors)\n    return cmap",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946444_1879516345",
+      "id": "20210905-094434_1989068247",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:17999"
+    },
+    {
+      "title": "def CAMD",
+      "text": "%spark.pyspark\ndef CAMD(passbands, catalogue, classes, colors = ['k', 'darkred', 'darkblue'], ms = 1, \n         labels = None, plotType = 'scatter', cmap = 'cividis', bins = [100, 100], colorbar = True,\n         limit = 10000, alpha = 1.0, save = False):\n    '''plot an observational Hertzsprung-Russell diagram (aka colour / absolute magnitude diagram)\n    for the unclassified sample to show the problem,\n    include the photometric consistency filter to show the problem is astrometric in addition to photometric '''\n    \n    import matplotlib.pylab as plt\n    fig, ax = plt.subplots(figsize = (7.0, 9.0))\n    \n    quick_plot_filter = f' AND MOD(a.source_id, {limit}) = 0'\n    tmp_df = spark.sql(f'SELECT a.phot_{passbands[0]}_mean_mag + 5.0*LOG10(a.parallax/100.0) \\\n                        AS m_{passbands[0]}, a.{passbands[1]}, a.is_wd FROM {catalogue} as a')\n    # #                 {quick_plot_filter}')\n    tmp_df = tmp_df.toPandas().dropna()\n\n    for c, value in enumerate(classes):\n        if type(ms) == list:\n            s = ms[c]\n        else: s = ms\n        if type(labels) == type(None):\n            label = value\n        else: label = labels[c]\n        color = None\n        if plotType == 'scatter':\n            color = colors[c]\n        else: cmp = cmap[c]; bns = bins[c]\n\n        tmp = tmp_df[tmp_df['is_wd'] == c]\n        selectPlotType(x = tmp[f'{passbands[1]}'], y = tmp[f'm_{passbands[0]}'], \n                       plotType = plotType, ax = ax, cmap = cmp, color = color,\n                       label = label, s = s, white_nan = True, bins = bns, cbar = colorbar)\n        \n    plt.ylim(18.0, -5.0)\n    plt.xlim(-1, 2.0)\n    plt.ylabel('Stellar brightness (absolute G magnitude) -->', fontsize = 16)\n    plt.xlabel('<-- Stellar temperature (G - RP magnitude)', fontsize = 16)\n    if plotType == 'scatter':\n        lgnd = plt.legend(fontsize = 12, markerscale = 1)\n    if save:\n        if not dev_run:\n            savefigs(save)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946445_-1951911627",
+      "id": "20210905-094348_490913450",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18000"
+    },
+    {
+      "title": "plot CAMD",
+      "text": "%spark.pyspark\n# CAMD(passbands = ['g', 'g_rp'], catalogue = 'dcr_raw_sources', alpha = 0.5, \n#      cmap = ['cividis', 'inferno'], colors = ['k', 'darkblue'], \n#      classes = ['Other Source Type', 'White Dwarf'], ms = 4, limit = 5000,\n#      plotType = 'kdeHeatmap', bins = [200, 100], save = False)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946445_205737273",
+      "id": "20210905-094547_1870473742",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18001"
+    },
+    {
+      "title": "def spacialDistributionSubplotHex",
+      "text": "%spark.pyspark\ndef spacialDistributionSubplotHex(class_val = 0, label = None, limit = None, labelCol = 'label', color = 'k', \n                                save = False, vmax = None, cmap = ['cividis', 'cividis'],\n                                catalogue = 'dcr_training_sources', fontsize = 14, scale = [None, None]):\n\n    plt.figure(2, figsize = (24.18, 7.0))\n    plt.rcParams['font.size'] = fontsize\n    \n    dat = spark.sql(f'SELECT a.{labelCol}, a.l, a.b FROM {catalogue} as a')\n    dat = dat.withColumn('l_rad', (col('l') - 180.0) * np.pi / 180.0)\\\n                .withColumn('b_rad', (col('b') * np.pi / 180.0))\\\n                    .select(['l_rad', 'b_rad', labelCol])\\\n                        .toPandas()\n    \n    print('data in Pandas')\n    for i, value in enumerate(class_val):\n        tmp = dat[dat[labelCol] == value]\n        plt.subplot(1,2,i+1, projection='aitoff')\n        plt.grid(True)\n        if vmax:\n            vm = vmax[i]; extend = 'max'\n        else: vm = None; extend = None\n        plt.title(f'{label[i]}', fontsize = fontsize+4)\n        image = plt.hexbin(tmp['l_rad'].values, tmp['b_rad'].values, cmap=cmap[i], \n                   gridsize=100, mincnt=1, bins=scale[i], vmax = vm, alpha = 1.0) \n        cb = plt.colorbar(image, extend = extend, spacing = 'proportional', ) \n        print(cb.boundaries)\n    plt.tight_layout()\n    if save:\n        if not dev_run:\n            savefigs(save)\n    plt.show()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946445_411998268",
+      "id": "20210920-150458_1036002619",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18002"
+    },
+    {
+      "title": "Split into Training and test data",
+      "text": "%spark.pyspark\n\ndef split_training_data(df, columns = '*', label = None, split = 0.8, seed = 0):\n    '''splits df into trianing and test set. \"label\" [type int] creates a column for classification,\n    if label is present set label = None'''\n    \n    # Select relevent columns\n    df = df.select(columns)\n    if label != None:\n        df = df.withColumn('label', lit(label))\n    # Split the data into train and test with seed for repeatability\n    train, test = df.randomSplit([split, 1-split], seed)\n    \n    return train, test\n\ntrain, test = split_training_data(df, columns = return_training_columns(),\n                                         split = 0.8, seed = 42)\n\n# count = test.count()                   \n# print(count, count*5)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946462_-618423095",
+      "id": "20210309-152737_543777343",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18004"
+    },
+    {
+      "title": "FeatureDenseVectors",
+      "text": "%spark.pyspark\ndef transform_datasets(df, ignore = [], combine = True):\n    '''combines two dataframes into a single transformed dataFrame for spark.ml \n    classifier for training or validation'''\n    \n    # Annotate and transform appropriate to the input required by the classifier's API.\n    # Need a dataframe with labels and features: use vector assembler.\n    assembler = VectorAssembler(inputCols=[i for i in df.columns if i not in ignore], \n                            outputCol = 'features', handleInvalid = 'skip')\n    \n\n    df = assembler.transform(df)\n    return df\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946462_-829433011",
+      "id": "20210830-161940_1525481386",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18005"
+    },
+    {
+      "text": "%md\n\n# Normalisation\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946462_1483317663",
+      "id": "20210830-111112_1646211749",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18006"
+    },
+    {
+      "title": "getScalar",
+      "text": "%pyspark\n\ndef getScaler(scalerType):\n    '''Returns correct scaler for chosen normalization.'''\n    \n    if scalerType == 'standard': \n        from pyspark.ml.feature import StandardScaler\n        Scaler = StandardScaler(withMean=True, withStd = True)\n    elif scalerType == 'MinMax':\n        from pyspark.ml.feature import MinMaxScaler\n        Scaler = MinMaxScaler()\n    else: raise NameError(f'scalerType can be either \"MinMax\" or \"standard\" not {scaler}')\n    return Scaler\n\n\ndef getScalerModel(df, scalerType = 'standard', featuresCol = 'features',\n                       outCol = 'norm_features', save = False):\n    '''normalizes DenseVectors for MLlib'''\n\n    scaler = getScaler(scalerType = scalerType) # Get scaler\n    scaler.setInputCol(featuresCol)         # Set feature column name\n    scaler.setOutputCol(outCol)\n    model = scaler.fit(df)\n    if save:\n        model.write().overwrite().save(f'{save}/{scalerType}_normalisation_model')\n        print(f'Normalisation model saved at \"{save}/{scalerType}_normalisation_model\"')\n    return model\n\ndef normaliseData(df, model,):\n    '''normalizes featureCol of df using model from \"getScalerModel\" '''\n\n    return model.transform(df)\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946462_871029524",
+      "id": "20210830-111127_619701551",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18007"
+    },
+    {
+      "title": "getTrainTest",
+      "text": "%pyspark\ndef dataSparkML(train, test, labelCol = 'labels', featuresCol = 'features', \n                normalise = False, scalerType = 'standard', save = False,\n                nonFeatureCols = None):\n    '''get train and test dataset for input using pyspark.ml'''\n    \n    train = transform_datasets(df=train, ignore = nonFeatureCols)\n    test = transform_datasets(df = test, ignore = nonFeatureCols)\n    \n    if normalise:\n        # We rename featuresCol to maintain col name for later analysis\n        model = getScalerModel(train.withColumnRenamed(featuresCol, 'inputFeatures'),\n                               scalerType = scalerType, featuresCol = 'inputFeatures', \n                               outCol = featuresCol, save = save)\n        \n        # Normalise each dataset with the training data distributions\n        train = normaliseData(train.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        test  = normaliseData( test.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        print('data is normalised using training data distributions')\n        # print(f'Training data = {train.count()} sources')\n    \n    return (train, test)\n    \nnonFeatureCols = ['is_wd', 'source_id', 'ra', 'dec', 'l', 'b']\n    \ntrain, test = dataSparkML(train, test, labelCol = 'is_wd', featuresCol = 'features', \n                           save = False, normalise = True, scalerType = 'standard', \n                           nonFeatureCols = nonFeatureCols)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946463_2117840082",
+      "id": "20210830-161927_1357065778",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18008"
+    },
+    {
+      "title": "Train_model",
+      "text": "%pyspark\n# This cell does the business, given the data and training sets. Follows the example Python code at \n# https://spark.apache.org/docs/3.1.2/api/python/pyspark.ml.html#pyspark.ml.classification.RandomForestClassifier\n\ndef train_model(save = False):\n    # instantiate a trained RF classifier, seeded for repeatability at this stage:\n    rf = RandomForestClassifier(featureSubsetStrategy = 'sqrt', featuresCol = 'features', labelCol = 'is_wd',\n                                numTrees = 100, impurity = 'entropy', maxDepth = 10, minInstancesPerNode = 1,\n                                seed = 42)\n    model = rf.fit(train)\n\n    if save:\n        if not dev_run:\n            prefix_save = f'{user_home}/WD_detection/models/'\n            print(f'{prefix_save}/{save}/')\n            model.write().overwrite().save(f'{prefix_save}/{save}/randomForestClassifier/')\n    return model\n    \nmodel = train_model(save = False)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946463_-684561676",
+      "id": "20210309-152736_1954453041",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18009"
+    },
+    {
+      "title": "MLlib_confusion_matrix",
+      "text": "%spark.pyspark\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pylab as plt\nfrom collections import Counter\n\nclass MLlib_confusion_matrix():\n    '''subclass to plot confusion matrix'''\n    def __init__(self, df, labelCol = 'label', classes = None, normalize = True):\n        self.df               = df\n        self.getLabelCol      = labelCol\n        self.grouped          = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix           = self.getConfusionMatrix()\n        self.normMatrix       = self.getNormConfusionMatrix()\n        self.confusion_matrix = self.confusionMatrix(classes, normalize)\n\n    def __repr__(self) : return f\"\"\"Class for plotting confusion matrix {self.normMatrix}\"\"\"\n\n    def getConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                                 (self.grouped.prediction == j)]['count'].values\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  c\n        return matrix\n\n    def getNormConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                        (self.grouped.prediction == j)]['count'].values\\\n                            /sum(self.grouped[(self.grouped[self.getLabelCol] == i)]['count'])\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  np.round(c , 4)\n        return matrix\n    \n    def confusionMatrix(self, classes = None, normalize = True, save = False):\n        '''prints rich version of confusion matrix'''\n        if normalize: matrix = self.normMatrix\n        else: matrix = self.matrix\n        if classes == None:\n            classes = range(len(matrix))\n\n        N_classes = range(len(classes))\n        plt.rcParams['figure.figsize'] = (6,6)\n\n        plt.imshow(matrix, cmap = 'Greens', alpha = 0.75)\n        for i in N_classes: # Add values to max pooling\n            for j in N_classes:\n                text = plt.text(j, i, matrix[i][j],\n                               ha=\"center\", va=\"center\", color=\"k\", fontsize = 20)\n\n        #Add thick line to matrix\n        axis = plt.gca()\n        axis.set_yticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.set_xticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.yaxis.grid(True, which='minor', color = 'k', lw = 2)\n        axis.xaxis.grid(True, which='minor', color = 'k', lw = 2)\n        plt.xticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.yticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.xlabel('Predicted Class', fontsize = 16)\n        plt.ylabel('True Class', fontsize = 16)\n        if save:\n            if not dev_run:\n                savefigs(save)\n                savetxt(matrix, save)\n        \n        \nclass MLlibMultiClassEvaluator(MLlib_confusion_matrix):\n    '''class to calculate parameters of NN performance for binary classification'''\n    \n    def __init__(self, df, labelCol = 'label'):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        # self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        \n    # def __len__(self)         : return self.df.count()\n    # def __repr__(self)        : return f\"\"\"Evaluate ML performance for {len(self)} datapoints.\"\"\"\n    \n    def getAnalysis(self):\n        '''returns a pd.DataFrame for analysis'''\n        data = self.df.select(self.getLabelCol,'probability', 'prediction').toPandas()\n        for i in range(max(data[self.getLabelCol])+1):\n            data[f'prob'] = [max(j) for j in data.probability]\n        return data\n    \n    def getTruePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        tp = {}\n        for cat in range(len(conMat)):\n            tp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] == data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    tp[cat].append(tmp[cat])\n            return tp\n        \n        \n    def getFalsePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fp = {}\n        for cat in range(len(conMat)):\n            fp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)].prediction)\n                for cat in range(len(conMat)):\n                    fp[cat].append(tmp[cat])\n            return fp        \n        \n    def getFalseNegatives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how False Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fn = {}\n        for cat in range(len(conMat)):\n            fn[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    fn[cat].append(tmp[cat])\n            return fn\n        \n    def getPrecision(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate precision'''\n        precision = {}; true_positives = self.getTruePositives(step); \n        false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        precision = {}\n        for cat in range(len(conMat)):\n            precision[cat] = conMat[cat][cat]\n            for cat in range(len(conMat)):\n                precision[cat] = [tp / (tp+fp) for tp, fp in zip(true_positives[cat],false_positives[cat])]\n        return precision\n    \n    def getRecall(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate recall'''\n        conMat = self.getConfusionMatrix()\n        recall = {}; true_positives = self.getTruePositives(step); \n        false_negatives = self.getFalseNegatives(step)\n        for cat in range(len(conMat)):\n            recall[cat] = []\n            for cat in range(len(conMat)):\n                recall[cat] = [tp / (tp+fn) for tp, fn in zip(true_positives[cat],false_negatives[cat])]\n        return recall\n    \n    \nclass plottingThreshold(MLlibMultiClassEvaluator):\n    '''subclass of \"threshold\" for various plots of useful threshold parameters.'''\n    \n    def __repr__(self): return f\"\"\"Plotting software for 'threshold' objects\"\"\"\n    def __init__(self, df, labelCol = 'label', classLabels = False):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        self.classLabels   = classLabels\n        \n        \n    def getAxes(self,ax):\n        if ax == None:\n            ax = plt.subplot(111)\n        return ax\n\n    def plot_true_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), normalize = True, \n                            legend = True, save = False):\n        ax = self.getAxes(ax); true_positives = self.getTruePositives(step); \n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if normalize == True:\n                y = [i/max(true_positives[cat]) for i in true_positives[cat]]\n                ax.set_ylabel('Fraction of Total True Positives -->')\n            else:\n                y = [i/len(self.data[self.data.true_label == cat]) for i in true_positives[cat]]\n                ax.set_ylabel('True Positives -->')\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        if save:\n            if not dev_run:\n                savetxt(step, save+'_threshold')\n                savetxt(y, save+'_true_positives')\n\n    def plot_false_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                            legend = True, save = False):\n        ax = self.getAxes(ax); false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if max(false_positives[cat]) != 0:\n                y = [i/max(false_positives[cat]) for i in false_positives[cat]]\n            else: y = [i for i in false_positives[cat]]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('<-- Fraction of Total False Positives')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_false_positives')\n\n    def plot_precision(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                        legend = True, save = False):\n        ax = self.getAxes(ax); precision = self.getPrecision(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = precision[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Precision -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_precision')\n\n    def plot_recall(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                    legend = True, save = False):\n        ax = self.getAxes(ax); recall = self.getRecall(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = recall[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Recall -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_recall')\n        \n    def getLabels(self, count):\n        if self.classLabels:\n            label = self.classLabels[count]\n        else:\n            label = count\n        return label\n\n    def threshold_subplots(self, step = np.arange(0.0, 0.95, 0.01), figsize=(15, 8), save = False):\n        import matplotlib.gridspec as gridspec\n        fig = plt.figure(figsize = figsize)\n        gs = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)\n        ax1 = fig.add_subplot(gs[0, 0])\n        ax2 = fig.add_subplot(gs[0, 1])\n        ax3 = fig.add_subplot(gs[1, 0])\n        ax4 = fig.add_subplot(gs[1, 1])\n\n        axs = [ax1, ax2, ax3, ax4]\n        self.plot_precision      (ax = axs[0], step = step, legend = False, save = save)\n        self.plot_recall         (ax = axs[1], step = step, legend = False, save = save)\n        self.plot_true_positives (ax = axs[2], step = step, legend = True , save = save)\n        self.plot_false_positives(ax = axs[3], step = step, legend = True , save = save)\n        plt.tight_layout()\n        \n        if save:\n            if not dev_run:\n                savefigs(save)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946464_-521337330",
+      "id": "20210830-112150_779544862",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18010"
+    },
+    {
+      "title": "Define EvaluateModel",
+      "text": "%spark.pyspark\ndef evaluateModel(rfModel, df, labelCol = 'label', evaluate = False,\n                  normalise = True, classLabels = False, save = False,\n                  step = np.arange(0.5, 0.99, 0.05)):\n    '''Apply a NN to new data, with the option to evaluate if test dataset'''\n    \n    # compute accuracy on the test set\n    result = rfModel.transform(df)\n#     print(\"Test set accuracy = \" + str(evaluator.evaluate(predictionAndLabels)))\n    \n    if evaluate:\n        # predictionAndLabels = result.select(\"prediction\", labelCol)\n        # evaluator = MulticlassClassificationEvaluator(metricName=\"accuracy\")\\\n        #                     .setLabelCol(labelCol)\n        # Call MLlib_confusion_matrix class to plot confusion matrix\n        res = MLlib_confusion_matrix(result, labelCol = labelCol)\n        if save:\n            save_matrix = save+'_confusion_matrix'\n        else: save_matrix = save\n        res.confusionMatrix(classes = ['Bad', 'Good'], normalize = normalise, save = save_matrix)\n        \n        if evaluate != 'minimal':\n        \n            # Call plottingThreshold to explore the effect of Thresholding\n            if save:\n                save_thresh = save+'_confusion_matrix'\n            else:\n                save_thresh = save\n            plottingThreshold(result, labelCol = labelCol, classLabels = classLabels)\\\n                .threshold_subplots(step = step, save = save_thresh)\n\n    return result",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946464_-329733465",
+      "id": "20210309-153636_2120767412",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18011"
+    },
+    {
+      "title": "Evaluate Model",
+      "text": "%spark.pyspark\nresult = evaluateModel(rfModel = model, df = test, normalise = True,  evaluate = True, \n                       labelCol = 'is_wd',  classLabels = ['Other Sources', \"Known WD's\"],\n                       save = False)\n                       \nresult.createOrReplaceTempView('ML_res')",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946464_-995322235",
+      "id": "20210830-112457_472468210",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18012"
+    },
+    {
+      "title": "BinaryClassifier",
+      "text": "%spark.pyspark\ndef binaryClassifier(df, positives = 1, labelCol = 'label', return_df = True, cache = True):\n    '''splits the df into objects classified correctly \"true\" and wrongly \"false\".\n    Returns two df if \"return_df\" = True and/or caches both if \"cache\" = True'''\n    \n    # Split data into true and falsely classified data\n    tp = df.filter((col(labelCol)==col('prediction')) & (col(labelCol) == positives))\n    tn = df.filter((col(labelCol)==col('prediction')) & (col(labelCol) != positives))\n    fp = df.filter((col(labelCol)!=col('prediction')) & (col(labelCol) == positives))\n    fn = df.filter((col(labelCol)!=col('prediction')) & (col(labelCol) != positives))\n    \n    if cache == True:\n        tp.createOrReplaceTempView('true_positives')\n        tn.createOrReplaceTempView('true_negatives')\n        fp.createOrReplaceTempView('false_positives')\n        fn.createOrReplaceTempView('false_negatives')\n    if return_df == True:\n        return (tp, tn, fp, fn)\n    else: return 0\n    \ntp, tn, fp, fn = binaryClassifier(result, labelCol = 'is_wd', cache = True)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946466_-438472209",
+      "id": "20210830-112550_165957380",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18013"
+    },
+    {
+      "title": "Feature Importance",
+      "text": "%spark.pyspark\ndef feature_importance(model, save = False):\n    columns = return_training_columns()\n    FI = list(model.featureImportances)\n    # for i in range(len(FI)):\n    #     print(columns[i+1], FI[i])\n\n    plt.rcParams['figure.figsize'] = 16,5\n    plt.bar(columns[1:-1], FI, color = 'darkslategrey')\n    plt.xticks(rotation=90)\n    plt.ylabel('Importance', fontsize = 15)\n    plt.xlabel('Feature', fontsize = 15)\n    if save:\n        if not dev_run:\n            savefigs(save)\n            savetxt([columns[1:-1], FI], filename = 'feature_importance')\n    plt.show()\n    return FI\n\nfeatureImport = feature_importance(model, save = False)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946467_-1225079641",
+      "id": "20210830-114415_100597012",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18015"
+    },
+    {
+      "text": "%spark.pyspark\ndef plot_probabilities(df, colors = ['darkblue', 'red'], bins = 25, alpha = 1.0,\n                       label = ['class0', 'class1'], class_value = [0,1],\n                      fontsize = 14, ec = 'k', save = False):\n    '''histogram of the classification probabilities: cf. GCNS paper Figure 3'''\n\n    plt.figure(1, figsize = (9.7, 6.0))\n    dat = df.select(['is_wd', 'probability']).toPandas()\n    dat['probability'] = [j[1] for j in dat['probability'].values]\n    tmp = np.zeros(len(class_value), dtype = 'object')\n    for i, value in enumerate(class_value):\n        tmp[i] = dat[dat['is_wd'] == i]['probability']\n    plt.hist(tmp, color = colors, bins=bins,\n                           log = True, label = label, alpha = alpha, ec = ec)\n    plt.xlabel('WD Probability -->', fontsize = fontsize)\n    plt.ylabel('N', fontsize = fontsize)\n    plt.xlim(0,1.0)\n    plt.legend(label)\n    if save:\n        if not dev_run:\n            savefigs(save)\n    \nplot_probabilities(df = result, bins = 20, colors = ['grey', 'goldenrod'], alpha = 1, ec = 'k',\n                   label = [\"Non-WD's\", \"WD's\"], save = False)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946467_1607178583",
+      "id": "20210830-114413_629290693",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18016"
+    },
+    {
+      "text": "%spark.pyspark\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946468_1900409426",
+      "id": "20210309-154111_1539950579",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18017"
+    },
+    {
+      "text": "%spark.pyspark\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:22:26+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634134946468_-723485186",
+      "id": "20210309-152731_1445922235",
+      "dateCreated": "2021-10-13T14:22:26+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:18018"
+    }
+  ],
+  "name": "experiments/stv/WD_stv",
+  "id": "2GJZ7GCJ4",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {
+    "md:shared_process": [],
+    "sh:shared_process": [],
+    "spark:gaiauser:": []
+  },
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {}
 }
