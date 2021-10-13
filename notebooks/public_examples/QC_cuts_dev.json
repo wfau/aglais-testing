@@ -1,1 +1,855 @@
-{"paragraphs":[{"text":"%spark.pyspark\n\nimport numpy as np\nimport pandas as pd\nimport pyspark.ml as ml\nfrom scipy.stats import kde\nimport matplotlib.pylab as plt\nfrom collections import Counter\nimport pyspark.sql.functions as f\nfrom pyspark.ml.feature import VectorAssembler\nfrom pyspark.sql.functions import lit, col, when, floor, udf, greatest\nfrom pyspark.ml.classification import MultilayerPerceptronClassifier\nfrom pyspark.ml.evaluation import MulticlassClassificationEvaluator\n\nuser_home = 'file:///user/dcr/'\n\ndev_run = True","user":"gaiauser","dateUpdated":"2021-10-05T09:20:44+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_1272785660","id":"20210706-142733_1394646815","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:44+0000","dateFinished":"2021-10-05T09:20:44+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"focus":true,"$$hashKey":"object:2259"},{"title":"Save functions","text":"%spark.pyspark\n# from mllib_results import MLlib_confusion_matrix, MLlibMultiClassEvaluator, plottingThreshold\n\ndef savefigs(filename, dpi = 450):\n    plt.savefig(f'/user/dcr/ML_cuts/plots/{filename}.png',\n                dpi=dpi, bbox_inches = 'tight')\n    plt.savefig(f'/user/dcr/ML_cuts/plots/{filename}.pdf',\n                dpi=dpi, bbox_inches = 'tight')\n                \ndef savetxt(df, filename):\n    if type(df) == list:\n        import json\n        with open(f'/user/dcr/ML_cuts/plots/data/{filename}.json', 'w') as f:\n            json.dump(df, f, indent=2)\n            \ndef opentxt(filename):\n    if filename.split('.')[-1] == 'json':\n        import json\n        with open(filename, 'r') as f:\n            score = json.load(f)","user":"gaiauser","dateUpdated":"2021-10-05T09:20:44+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":false,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_-1561766525","id":"20210709-141218_1170342984","dateCreated":"2021-10-05T09:19:33+0000","status":"READY","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2260"},{"text":"%spark.pyspark\ncolumns = 'source_id, parallax, parallax_error, parallax_over_error, pmra, astrometric_sigma5d_max,\\\npmdec, pmdec_error, pmra_error, astrometric_excess\\\n_noise ,visibility_periods_used, ruwe, astrometric_gof_al,\\\nipd_gof_harmonic_amplitude, ipd_frac_odd_win, ipd_frac_multi_peak, phot_g_mean_mag, phot_rp_mean_mag, g_rp'","user":"gaiauser","dateUpdated":"2021-10-05T09:20:44+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_134276601","id":"20210802-092017_1155122414","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:44+0000","dateFinished":"2021-10-05T09:20:44+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2261"},{"title":"Collect Required Data","text":"%spark.pyspark\n# clear any previously cached data in the context (cells may be executed in any order, and out-dated by changes from here onwards)\nsqlContext.clearCache()\n\ndef initial_query(columns, how, limit = None, tablename = 'dcr_raw_sources'):\n    if how == 'NoLimit':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source')\n    elif how == 'limited':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source \\\n                                        WHERE (1/parallax < limit)')\n\n    else: raise NameError('how must equal: [\"NoLimit\", \"limited\"]')\n                                    \n    raw_sources_df.createOrReplaceTempView(tablename)\n    \n    print(f'data at: {tablename}')\n\ninitial_query(columns = columns, how = 'NoLimit')\n\n\n# raw_sources_df.count()\n# EDR3: 1,055,241,799 sources in XXmin XXsec (<3 kpcs)\n# EDR3: 574,486,895 sources in 00min 02sec (<1 kpcs)\n# EDR3: 357,995,072 sources in 00min 02sec (<0.1 kpcs)","user":"gaiauser","dateUpdated":"2021-10-05T09:20:44+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_2063615522","id":"20210706-142657_7677965","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:44+0000","dateFinished":"2021-10-05T09:20:45+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2262"},{"text":"%spark.pyspark\n# raw_sources_df.count()","user":"gaiauser","dateUpdated":"2021-10-05T09:20:45+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_181774391","id":"20210727-133513_1982076653","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:45+0000","dateFinished":"2021-10-05T09:20:45+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2263"},{"title":"Show Tables","text":"%spark.pyspark\n\nspark.catalog.listTables()","user":"gaiauser","dateUpdated":"2021-10-05T09:20:45+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_-515933445","id":"20210706-141918_2051034386","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:45+0000","dateFinished":"2021-10-05T09:20:45+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2264"},{"title":"define plotTypes","text":"%spark.pyspark\ndef selectPlotType(x, y, plotType = 'scatter', ax = False, cmap = None, color = None,\n                  label = None, s = 1, white_nan = False, bins = 100, cbar = True):\n    if plotType == 'scatter':\n        scatter(x, y, ax = ax,\n                color = color, label = label, s = s)\n    elif plotType == 'kdeHeatmap':\n         kdeHeatmap(x, y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2Dhist':\n         hist2d(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2DhistSub':\n         hist2dSubplots(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    else: raise nameError('plotType must be one of [\"scatter\", \"kdeHeatmap\", \"2Dhist\", 2DhistSub]')\n    \ndef hist2dSubplots(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        addColorbarSubplots(cmap = cmap, im = im, ax = ax)\n\ndef addColorbarSubplots(cmap, im, ax):\n    from mpl_toolkits.axes_grid1 import make_axes_locatable\n    h = im[0]\n    divider = make_axes_locatable(ax)\n    cax = divider.append_axes('right', size='5%', pad=0.05)\n    sm = plt.cm.ScalarMappable(cmap='cividis', norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm, cax = cax)\n        \ndef kdeHeatmap(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a kdeHeatmap'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n\n    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents\n    nbins=bins\n    k = kde.gaussian_kde([x,y])\n    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]\n    zi = k(np.vstack([xi.flatten(), yi.flatten()]))\n\n    # Make the plot\n    im = ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto', cmap = cmap)\n    if cbar:\n        add_colorbar(cmap = cmap, im = im)\n    \ndef scatter(x,y, ax = False, color = None, label = None, s = 1):\n    '''creates a scatter plot'''\n    if not ax:\n        ax = plt.figure(111)\n    ax.scatter(x, y, marker = '.', s = s, c = color, label = label)\n    \ndef hist2d(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        add_colorbar(cmap = cmap, im = im)\n        \ndef add_colorbar(cmap, im):\n    h = im[0]\n    sm = plt.cm.ScalarMappable(cmap='cividis', norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm)\n    \ndef whiteNan(cmap):\n    '''adds white base for colormaps'''\n    \n    from matplotlib import cm\n    from matplotlib.colors import ListedColormap\n    \n    cmap = cm.get_cmap(cmap, 256)\n    newcolors = cmap(np.linspace(0, 1, 256))\n    white = np.array([1, 1, 1, 0])\n    newcolors[:2, :] = white\n    cmap = ListedColormap(newcolors)\n    return cmap","user":"gaiauser","dateUpdated":"2021-10-05T09:20:45+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_200882917","id":"20210903-105612_1877843291","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:46+0000","dateFinished":"2021-10-05T09:20:46+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2265"},{"title":"Show CAMD Unsorted","text":"%spark.pyspark\n\ndef CAMD(passbands, catalogues, colors = ['k', 'darkred', 'darkblue'], ms = 1, save = False, colorbar = False,\n         labels = None, plotType = 'scatter', cmap = 'cividis', bins = 100, limit = 25000, title = None):\n    '''plot an observational Hertzsprung-Russell diagram (aka colour / absolute magnitude diagram)\n    for the unclassified sample to show the problem,\n    include the photometric consistency filter to show the problem is astrometric in addition to photometric '''\n    \n    import matplotlib.pylab as plt\n    fig, ax = plt.subplots(figsize = (9.0, 9.0))\n    c = -1\n    quick_plot_filter = f' WHERE MOD(source_id, {limit}) = 0'\n    for i in catalogues:\n        c+=1\n        if type(ms) == list:\n            s = ms[c]\n        else: s = ms\n        if type(labels) == type(None):\n            label = i\n        else: label = labels[c]\n            \n        if plotType == 'scatter':\n            color = colors[c]\n        else: color = None\n        \n        tmp_df = spark.sql(f\"SELECT phot_{passbands[0]}_mean_mag + 5.0*LOG10(parallax/100.0) AS m_{passbands[0]}, \\\n                            {passbands[1]} FROM {i} {quick_plot_filter}\")\n\n        tmp_df = tmp_df.toPandas().dropna()\n        selectPlotType(x = tmp_df[f'{passbands[1]}'], y = tmp_df[f'm_{passbands[0]}'], \n                      plotType = plotType, ax = ax, cmap = cmap, color = color,\n                      label = label, s = s, white_nan = True, bins = bins, cbar = colorbar)\n        \n    plt.ylim(18.0, -10.0)\n    plt.xlim(-0.5, 3)\n    plt.ylabel('Stellar brightness (absolute G magnitude) -->', fontsize = 16)\n    plt.xlabel('<-- Stellar temperature (G - RP magnitude)', fontsize = 16)\n    if plotType == 'scatter':\n        lgnd = plt.legend(fontsize = 12, markerscale = 1)\n        for i in range(len(catalogues)):\n            lgnd.legendHandles[i]._sizes = [25]\n    else:\n        plt.title(title)\n        \n    if save:\n        if not dev_run:\n            savefigs(save)\n\nCAMD(passbands = [\"g\", \"g_rp\"], catalogues = [\"dcr_raw_sources\"], colors = [\"k\"], limit = 20000, \n     labels = ['All Sources'], plotType = '2Dhist', cmap = 'cividis', bins = 1000, \n     title = 'All Sources', colorbar = True,) # save = 'All_sources_CAMD')","user":"gaiauser","dateUpdated":"2021-10-05T09:20:46+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573545_-1819324686","id":"20210706-151223_1219291343","dateCreated":"2021-10-05T09:19:33+0000","status":"READY","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2266"},{"title":"Get HEALPix-6 Factor","text":"%spark.pyspark\n\ndef healpix_level_N(source_id, level, constant = False):\n    '''returns the HEALpix pixel from Gaia Source ID'''\n    if constant == True:\n        return 2**35 * 4**(12-level)\n    else:    \n        return np.floor(source_id/(2**35 * 4**(12-level)))\n","user":"gaiauser","dateUpdated":"2021-10-05T09:20:46+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573546_1371845085","id":"20210706-145744_1307665902","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:46+0000","dateFinished":"2021-10-05T09:20:46+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2267"},{"text":"%md\n\n### Sort *'Labelled'* Training Data\n\n- Good data = each HEALPix level-6 pixel that contains no sources with parallax_over_error < −3.5.\n- Bad data = parallax_over_error < −4.5\n\n### With further split into SNR bins\n\n* High SNR = parallax_over_error (SNR) > 4.5\n* Low SNR = -3.5 < SNR < 4.5","user":"gaiauser","dateUpdated":"2021-10-05T09:20:46+0000","config":{"tableHide":false,"editorSetting":{"language":"markdown","editOnDblClick":true,"completionKey":"TAB","completionSupport":false},"colWidth":12,"editorMode":"ace/mode/markdown","fontSize":9,"editorHide":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573546_896187738","id":"20210706-145747_58341513","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:46+0000","dateFinished":"2021-10-05T09:20:46+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2268"},{"title":"Define features","text":"%spark.pyspark\n\nfactor = healpix_level_N(source_id = None, level = 6, constant = True)\n\ndef getFeatures(withPhotometric = False):\n    # select features to use\n    features = [\n        'source_id', 'parallax_error', 'parallax_over_error',\n        'pmra', 'astrometric_sigma5d_max', 'pmdec',\n        'pmdec_error', 'pmra_error', 'astrometric_excess_noise',\n        'visibility_periods_used', 'ruwe', 'astrometric_gof_al',\n        'ipd_gof_harmonic_amplitude', 'ipd_frac_odd_win', 'ipd_frac_multi_peak',]\n        \n    if withPhotometric:\n        features.extend(['m_g', 'g_rp'])\n    \n    return features\n\nfeatures = getFeatures()","user":"gaiauser","dateUpdated":"2021-10-05T09:20:46+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573546_620411063","id":"20210709-135723_1861639683","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:46+0000","dateFinished":"2021-10-05T09:20:47+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2269"},{"title":"Select Good or Bad Sources","text":"%spark.pyspark\n\ndef select_bad_sources(table):\n    '''Selects bad sources from eDR3'''\n    \n    bad = spark.sql(f'SELECT a.* \\\n                    FROM {table} as a\\\n                    WHERE parallax_over_error < -4.5')\n    # print(f'{bad.count()} bad sources')\n    print(f'Collected bad sources')\n    \n    return bad\n\ndef crossMatch_sql(crossMatch = False):\n    if crossMatch == False:\n        return ''\n    elif crossMatch == 'ps1' or crossMatch == 'PS1':\n        return \"JOIN gaia_source_ps1_best_neighbours USING (source_id)\"\n    elif crossMatch == 'tmass':\n        return \"JOIN gaia_source_tmasspsc_best_neighbours USING (source_id)\"\n    elif crossMatch == 'wise':\n        return \"JOIN gaia_source_allwise_best_neighbours USING (source_id)\"\n        \n    else: raise NameError('crossMatch must equal one of: [False, \"ps1\", \"tmass\", \"wise\"]')\n\ndef select_good_sources(table, crossMatch = False):\n    '''Selects good sources from eDR3'''\n    \n    cross = crossMatch_sql(crossMatch = crossMatch)\n    \n    good = spark.sql(f'SELECT a.* \\\n    FROM {table} as a \\\n    {cross} \\\n    WHERE (a.parallax_over_error > 4.5 AND (a.phot_g_mean_mag - a.phot_rp_mean_mag) <1.8) \\\n    OR (a.parallax_over_error < 4.5 AND a.parallax_over_error > -3.0 AND \\\n    (a.phot_g_mean_mag - a.phot_rp_mean_mag) <1.5)')\n    # print(f'{good.count()} good sources')\n    print(f'Collected Good sources')\n    return good\n\ndef with_flags(table, features = \"*\", crossMatch = False):\n    '''Collects data with an \"is_good\" flag for trianing NN'''\n    \n    # Select training data with flag for good or bad data.\n    good = select_good_sources(table, crossMatch = crossMatch).select(features).withColumn('is_good', lit(1))\n    bad = select_bad_sources(table).select(features).withColumn('is_good', lit(0))\n    \n    factor = healpix_level_N(source_id = None, level = 6, constant = True)\n    \n    # Join data with a column for |SNR|\n    df = good.union(bad)\\\n                    .withColumn('abs_SNR', \n                                f.abs(col('parallax_over_error')))\\\n                    .withColumn('hpx6', floor(col('source_id')/factor))\n    print('DataBase with flags')\n    \n    return df","user":"gaiauser","dateUpdated":"2021-10-05T09:20:47+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573546_-1699447441","id":"20210709-135722_1405384887","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:47+0000","dateFinished":"2021-10-05T09:20:47+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2270"},{"title":"Drop Bad Pixels","text":"%spark.pyspark\n\n# Total pixels = 49,152 (4192)\n\ndef drop_bad_pixels(data, all_sources):\n    '''drop good sources from HEALpix6 pixels that contain bad sources'''\n    \n    # Identify bad pixels\n    # bad_pixels = set([int(i[0]) for i in df.filter(col('parallax_over_error') < -3.0)\\\n    #                   .select('hpx6').toPandas().values])\n    \n    bad_pixels = spark.sql(f'SELECT FLOOR(a.source_id/{factor}) as hpx6 \\\n    FROM {all_sources} as a \\\n    WHERE (a.parallax_over_error < - 3.5)').distinct()\n                      \n    # bad_pixels = data.filter(col('parallax_over_error') < -3.5).select('hpx6').distinct() # spark version of above\n\n    # Drop data from pixels that contain bad datapoints\n    # data = data.filter((col('is_good') == 0) | \n    #               ((col('is_good') == 1) & \n    #                 (~data.hpx6.isin(bad_pixels))))\n    \n    bad = data.filter((col('is_good') == 0))\n    # Add bad.columns to ensure correct column order for join\n    good = data.join(bad_pixels, 'hpx6', how = \"left_anti\")[bad.columns]\n    \n    df = good.union(bad)\n\n    # N_good_pixels = data.select('hpx6').distinct()\n    return df\n\ndf = with_flags(table = 'dcr_raw_sources', features = features, crossMatch = 'PS1')\ndf = drop_bad_pixels(df, all_sources = 'dcr_raw_sources')\ndf = df.cache()\ndf.createOrReplaceTempView('dcr_data')","user":"gaiauser","dateUpdated":"2021-10-05T09:20:47+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573546_-258881660","id":"20210709-135721_329827109","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:47+0000","dateFinished":"2021-10-05T09:20:49+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2271"},{"text":"%spark.pyspark\ndf.createOrReplaceTempView('dcr_training_sources')","user":"gaiauser","dateUpdated":"2021-10-05T09:20:50+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":false,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573547_1644450266","id":"20210804-134330_1534317830","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:50+0000","dateFinished":"2021-10-05T09:20:50+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2272"},{"title":"def spacialDistributionSubplotHex","text":"%spark.pyspark\ndef spacialDistributionSubplotHex(class_val = 0, label = None, limit = None, labelCol = 'label', color = 'k', \n                                save = False, sourceCat = 'dcr_raw_sources', vmax = None, projection = 'galactic',\n                                trainingCat = 'dcr_training_sources', fontsize = 14, scale = None,):\n\n    plt.figure(2, figsize = (24.18, 7.0))\n    plt.rcParams['font.size'] = fontsize\n    \n    # Allows a choice of projections.\n    if projection == 'equitorial': coord_cols = ['ra', 'dec']\n    elif projection == 'galactic': coord_cols = ['l', 'b']\n    \n    quick_plot_filter = f' AND MOD(a.source_id, {limit}) = 0'\n    \n    dat = spark.sql(f'SELECT b.{labelCol}, a.{coord_cols[0]}, a.{coord_cols[1]} FROM {sourceCat} as a, \\\n                                                 {trainingCat} as b \\\n                                                 WHERE a.source_id = b.source_id \\\n                                                 {quick_plot_filter}')\n    dat = dat.withColumn(f'{coord_cols[0]}_rad', (col(coord_cols[0]) - 180.0) * np.pi / 180.0)\\\n                .withColumn(f'{coord_cols[1]}_rad', (col(coord_cols[1]) * np.pi / 180.0))\\\n                    .select([f'{coord_cols[0]}_rad', f'{coord_cols[1]}_rad', labelCol])\\\n                        .toPandas()\n    \n    print('data in Pandas')\n    for i, value in enumerate(class_val):\n        tmp = dat[dat[labelCol] == value]\n        plt.subplot(1,2,i+1, projection='aitoff')\n        plt.grid(True)\n        if vmax:\n            vm = vmax[i]; extend = 'max'\n        else: vm = None; extend = None\n        plt.title(f'{label[i]}', fontsize = fontsize+4)\n        image = plt.hexbin(tmp[f'{coord_cols[0]}_rad'].values, tmp[f'{coord_cols[1]}_rad'].values, cmap='cividis', \n                   gridsize=100, mincnt=1, bins=scale, vmax = vm, alpha = 1.0) \n        cb = plt.colorbar(image, extend = extend, spacing = 'proportional') \n    plt.tight_layout()\n    if save:\n        if not dev_run:\n            savefigs(save)\n    plt.show()","user":"gaiauser","dateUpdated":"2021-10-05T09:20:50+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573547_1975774090","id":"20210903-134105_1093168040","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:50+0000","dateFinished":"2021-10-05T09:20:50+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2273"},{"title":"spacialDistribution Plots","text":"%spark.pyspark\nspacialDistributionSubplotHex(class_val = [1,0], label = ['Good Sources', 'Spurious Sources'], \n                           color = ['k', 'darkred'], limit = 100, labelCol = 'is_good', \n                           sourceCat = 'gaia_source', trainingCat = 'dcr_training_sources',\n                          fontsize = 14, vmax = [600, 1000], projection = 'equitorial', scale = 'log', )","user":"gaiauser","dateUpdated":"2021-10-05T09:20:50+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":false,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573547_91175696","id":"20210903-144707_8959545","dateCreated":"2021-10-05T09:19:33+0000","status":"READY","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2274"},{"text":"%md\n# Regimes:\n\n### Low |SNR|\n* |SNR| < 4.5 but training data omits data with |SNR| < 4.5 to prevent the imbalance in coverage of SNR-space in the good and bad training sets from impacting our classifications in the low-SNR regime.\n* Does not include |SNR| as a feature.\n\n### High |SNR|\n* Uses the entire training set","user":"gaiauser","dateUpdated":"2021-10-05T09:20:50+0000","config":{"tableHide":false,"editorSetting":{"language":"markdown","editOnDblClick":true,"completionKey":"TAB","completionSupport":false},"colWidth":12,"editorMode":"ace/mode/markdown","fontSize":9,"editorHide":true,"title":false,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573551_1103042882","id":"20210709-135720_1210777367","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:50+0000","dateFinished":"2021-10-05T09:20:50+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2275"},{"title":"Return correct data for regime","text":"%spark.pyspark\n\ndef return_low_snr(df, features = '*'):\n    '''Creates low SNR training dataset. (-3.5 < SNR < 4.5)\n    This dataset does not include parallax over error as a training feature\n    Counter intuitively, this dataset only includes data with |SNR| > 4.5.'''\n    df = df.select(features)\\\n                .filter((col('abs_SNR') > 4.5) | (col('is_good') == 0))\n    \n#     print(f' Low SNR dataset contains {df.filter(df.is_good == 1).count()} \\\n# \"good\" data points and {df.filter(df.is_good == 0).count()} \"bad\" datapoints.')\n    print('Low SNR dataset returned')\n    return df\n\ndef return_high_snr(df, features = '*'):\n    '''Creates high SNR training dataset. (|SNR| > 4.5)\n    This dataset does include parallax over error as a training feature.'''\n    \n#     print(f'High SNR dataset contains {df.filter(df.is_good == 1).count()} \\\n# \"good\" data points and {df.filter(df.is_good == 0).count()} \"bad\" datapoints.')\n    print('High SNR dataset returned')\n    \n    return df.select(features)\n","user":"gaiauser","dateUpdated":"2021-10-05T09:20:50+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_-43266568","id":"20210709-140832_772076010","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:50+0000","dateFinished":"2021-10-05T09:20:50+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2276"},{"title":"Split into Train and Test Data","text":"%spark.pyspark\n\ndef split_data(data, split = 0.2, seed = 42):\n    '''Splits a SQL.DataFrame into independent training and test datasets'''\n    \n    return data.randomSplit([1-split, split], seed)\n\ndef get_training_data(df, regime, split = 0.2, seed = 42,):\n    '''returns tuple of DataFrames of training and test data \n       for either High SNR or Low SNR regimes.'''\n    if 'high' in regime:\n        df = return_high_snr(df)\n        \n    elif 'low' in regime:\n        df = return_low_snr(df)\n        \n    else: raise NameError('regime is either \"high\" or \"low\"')\n    return split_data(df, split, seed)","user":"gaiauser","dateUpdated":"2021-10-05T09:20:50+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_-1159935803","id":"20210709-140840_427510120","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:51+0000","dateFinished":"2021-10-05T09:20:51+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2277"},{"title":"Select Training Features","text":"%spark.pyspark\n\ndef select_training_features(df, regime):\n    '''selects correct features for the given regime'''\n    \n    features = [i for i in df.columns if i not in ['source_id', 'parallax_over_error', \n                                                   'is_good', 'hpx6', 'm_g', 'g_rp']]\n    \n    if 'low' in regime:\n        features.remove('abs_SNR')\n    # elif not 'high' in regime: raise NameError('regime is either \"high\" or \"low\"')\n    return features","user":"gaiauser","dateUpdated":"2021-10-05T09:20:51+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_1652146861","id":"20210709-140841_1557013711","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:51+0000","dateFinished":"2021-10-05T09:20:51+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2278"},{"text":"%md\n\n# Normalization\n","user":"gaiauser","dateUpdated":"2021-10-05T09:20:51+0000","config":{"tableHide":false,"editorSetting":{"language":"markdown","editOnDblClick":true,"completionKey":"TAB","completionSupport":false},"colWidth":12,"editorMode":"ace/mode/markdown","fontSize":9,"editorHide":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_878205404","id":"20210709-141041_2000243903","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:51+0000","dateFinished":"2021-10-05T09:20:51+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2279"},{"title":"getScaler","text":"%spark.pyspark\n\ndef getScaler(scalerType):\n    '''Returns correct scaler for chosen normalization.'''\n    \n    if scalerType == 'standard': \n        from pyspark.ml.feature import StandardScaler\n        Scaler = StandardScaler(withMean=True, withStd = True)\n    elif scalerType == 'MinMax':\n        from pyspark.ml.feature import MinMaxScaler\n        Scaler = MinMaxScaler()\n    else: raise NameError(f'scalerType can be either \"MinMax\" or \"standard\" not {scaler}')\n    return Scaler\n\n\ndef getScalerModel(df, scalerType = 'standard', featuresCol = 'features',\n                       outCol = 'norm_features', save = False):\n    '''normalizes DenseVectors for MLlib'''\n\n    scaler = getScaler(scalerType = scalerType) # Get scaler\n    scaler.setInputCol(featuresCol)         # Set feature column name\n    scaler.setOutputCol(outCol)\n    model = scaler.fit(df)\n    if save:\n        model.save(f'{save}/{scalerType}_normalisation_model')\n        print(f'Normalisation model saved at \"{save}/{scalerType}_normalisation_model\"')\n    return model\n\ndef normaliseData(df, model,):\n    '''normalizes featureCol of df using model from \"getScalerModel\" '''\n\n    return model.transform(df)","user":"gaiauser","dateUpdated":"2021-10-05T09:20:51+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_1702624018","id":"20210712-163126_1792127427","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:51+0000","dateFinished":"2021-10-05T09:20:51+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2280"},{"title":"Build the Model","text":"%spark.pyspark\n\ndef dataSparkML(df, regime, labelCol = 'labels', featuresCol = 'features', \n                normalise = False, scalerType = 'standard', save = False):\n    '''get train and test dataset for input using pyspark.ml'''\n\n    # Get data and label columns for the selected regime\n    data  = get_training_data(df, regime = regime)\n    train_features = select_training_features(data[0], regime = regime)\n    N_features = len(train_features)\n    # Assemble assember to merge features into DenseVector\n    assembler = VectorAssembler(inputCols=train_features,\n                                outputCol=featuresCol)\n    \n    \n    train = assembler.transform(data[0])\\\n                .select(['source_id', featuresCol, labelCol])\n    test  = assembler.transform(data[1])\\\n                .select(['source_id', featuresCol, labelCol])\n    \n    if normalise:\n        # We rename featuresCol to maintain col name for later analysis\n        model = getScalerModel(train.withColumnRenamed(featuresCol, 'inputFeatures'),\n                               scalerType = scalerType, featuresCol = 'inputFeatures', \n                               outCol = featuresCol, save = save)\n        \n        # Normalise each dataset with the training data distributions\n        train = normaliseData(train.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        test  = normaliseData( test.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        \n        print(f'Training data = {train.count()} sources')\n    \n    return (train, test, N_features)\n\n# train,test, N_features, model = dataSparkML(df, regime = 'low', labelCol = 'is_good', normalise = True)","user":"gaiauser","dateUpdated":"2021-10-05T09:20:51+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_1079999395","id":"20210709-141041_25617336","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:51+0000","dateFinished":"2021-10-05T09:20:51+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2281"},{"title":"MLlib_confusion_matrix","text":"%spark.pyspark\n\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pylab as plt\nfrom collections import Counter\n\nclass MLlib_confusion_matrix():\n    '''subclass to plot confusion matrix'''\n    def __init__(self, df, labelCol = 'label', classes = None, normalize = True):\n        self.df               = df\n        self.getLabelCol      = labelCol\n        self.grouped          = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix           = self.getConfusionMatrix()\n        self.normMatrix       = self.getNormConfusionMatrix()\n        self.confusion_matrix = self.confusionMatrix(classes, normalize)\n\n    def __repr__(self) : return f\"\"\"Class for plotting confusion matrix {self.normMatrix}\"\"\"\n\n    def getConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                                 (self.grouped.prediction == j)]['count'].values\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  c\n        return matrix\n\n    def getNormConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                        (self.grouped.prediction == j)]['count'].values\\\n                            /sum(self.grouped[(self.grouped[self.getLabelCol] == i)]['count'])\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  np.round(c , 4)\n        return matrix\n    \n    def confusionMatrix(self, classes = None, normalize = True, save = False):\n        '''prints rich version of confusion matrix'''\n        if normalize: matrix = self.normMatrix\n        else: matrix = self.matrix\n        if classes == None:\n            classes = range(len(matrix))\n\n        N_classes = range(len(classes))\n        plt.rcParams['figure.figsize'] = (6,6)\n\n        plt.imshow(matrix, cmap = 'Greens', alpha = 0.75)\n        for i in N_classes: # Add values to max pooling\n            for j in N_classes:\n                text = plt.text(j, i, matrix[i][j],\n                               ha=\"center\", va=\"center\", color=\"k\", fontsize = 20)\n\n        #Add thick line to matrix\n        axis = plt.gca()\n        axis.set_yticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.set_xticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.yaxis.grid(True, which='minor', color = 'k', lw = 2)\n        axis.xaxis.grid(True, which='minor', color = 'k', lw = 2)\n        plt.xticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.yticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.xlabel('Predicted Class', fontsize = 16)\n        plt.ylabel('True Class', fontsize = 16)\n        if save:\n            if not dev_run:\n                savefigs(save)\n                savetxt(matrix, save)\n        \n        \nclass MLlibMultiClassEvaluator(MLlib_confusion_matrix):\n    '''class to calculate parameters of NN performance for binary classification'''\n    \n    def __init__(self, df, labelCol = 'label'):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        # self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        \n    # def __len__(self)         : return self.df.count()\n    # def __repr__(self)        : return f\"\"\"Evaluate ML performance for {len(self)} datapoints.\"\"\"\n    \n    def getAnalysis(self):\n        '''returns a pd.DataFrame for analysis'''\n        data = self.df.select(self.getLabelCol,'probability', 'prediction').toPandas()\n        for i in range(max(data[self.getLabelCol])+1):\n            data[f'prob'] = [max(j) for j in data.probability]\n        return data\n    \n    def getTruePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        tp = {}\n        for cat in range(len(conMat)):\n            tp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] == data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    tp[cat].append(tmp[cat])\n            return tp\n        \n        \n    def getFalsePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fp = {}\n        for cat in range(len(conMat)):\n            fp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)].prediction)\n                for cat in range(len(conMat)):\n                    fp[cat].append(tmp[cat])\n            return fp        \n        \n    def getFalseNegatives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how False Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fn = {}\n        for cat in range(len(conMat)):\n            fn[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    fn[cat].append(tmp[cat])\n            return fn\n        \n    def getPrecision(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate precision'''\n        precision = {}; true_positives = self.getTruePositives(step); \n        false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        precision = {}\n        for cat in range(len(conMat)):\n            precision[cat] = conMat[cat][cat]\n            for cat in range(len(conMat)):\n                precision[cat] = [tp / (tp+fp) for tp, fp in zip(true_positives[cat],false_positives[cat])]\n        return precision\n    \n    def getRecall(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate recall'''\n        conMat = self.getConfusionMatrix()\n        recall = {}; true_positives = self.getTruePositives(step); \n        false_negatives = self.getFalseNegatives(step)\n        for cat in range(len(conMat)):\n            recall[cat] = []\n            for cat in range(len(conMat)):\n                recall[cat] = [tp / (tp+fn) for tp, fn in zip(true_positives[cat],false_negatives[cat])]\n        return recall\n    \n    \nclass plottingThreshold(MLlibMultiClassEvaluator):\n    '''subclass of \"threshold\" for various plots of useful threshold parameters.'''\n    \n    def __repr__(self): return f\"\"\"Plotting software for 'threshold' objects\"\"\"\n    def __init__(self, df, labelCol = 'label', classLabels = False):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        self.classLabels   = classLabels\n        \n        \n    def getAxes(self,ax):\n        if ax == None:\n            ax = plt.subplot(111)\n        return ax\n\n    def plot_true_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), normalize = True, \n                            legend = True, save = False):\n        ax = self.getAxes(ax); true_positives = self.getTruePositives(step); \n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if normalize == True:\n                y = [i/max(true_positives[cat]) for i in true_positives[cat]]\n                ax.set_ylabel('Fraction of Total True Positives -->')\n            else:\n                y = [i/len(self.data[self.data.true_label == cat]) for i in true_positives[cat]]\n                ax.set_ylabel('True Positives -->')\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        if save:\n            if not dev_run:\n                savetxt(step, save+'_step')\n                savetxt(y, save+'_true_positives')\n\n    def plot_false_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                            legend = True, save = False):\n        ax = self.getAxes(ax); false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if max(false_positives[cat]) != 0:\n                y = [i/max(false_positives[cat]) for i in false_positives[cat]]\n            else: y = [i for i in false_positives[cat]]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('<-- Fraction of Total False Positives')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_false_positives')\n\n    def plot_precision(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                        legend = True, save = False):\n        ax = self.getAxes(ax); precision = self.getPrecision(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = precision[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Precision -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_precision')\n\n    def plot_recall(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                    legend = True, save = False):\n        ax = self.getAxes(ax); recall = self.getRecall(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = recall[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Recall -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_recall')\n        \n    def getLabels(self, count):\n        if self.classLabels:\n            label = self.classLabels[count]\n        else:\n            label = count\n        return label\n\n    def threshold_subplots(self, step = np.arange(0.0, 0.95, 0.01), figsize=(15, 8), save = False):\n        import matplotlib.gridspec as gridspec\n        fig = plt.figure(figsize = figsize)\n        gs = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)\n        ax1 = fig.add_subplot(gs[0, 0])\n        ax2 = fig.add_subplot(gs[0, 1])\n        ax3 = fig.add_subplot(gs[1, 0])\n        ax4 = fig.add_subplot(gs[1, 1])\n\n        axs = [ax1, ax2, ax3, ax4]\n        self.plot_precision      (ax = axs[0], step = step, legend = False, save = save)\n        self.plot_recall         (ax = axs[1], step = step, legend = False, save = save)\n        self.plot_true_positives (ax = axs[2], step = step, legend = True , save = save)\n        self.plot_false_positives(ax = axs[3], step = step, legend = True , save = save)\n        plt.tight_layout()\n        \n        if save:\n            if not dev_run:\n                savefigs(save)\n        plt.show()","user":"gaiauser","dateUpdated":"2021-10-05T09:20:51+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_2129966152","id":"20210706-145746_766891138","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:51+0000","dateFinished":"2021-10-05T09:20:52+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2282"},{"text":"%spark.pyspark\nsqlContext.clearCache()","user":"gaiauser","dateUpdated":"2021-10-05T09:20:52+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_1250001911","id":"20210804-160246_1472830535","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:52+0000","dateFinished":"2021-10-05T09:20:52+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2283"},{"title":"Train the model","text":"%spark.pyspark\n\ndef nnTrainModel(df, regime, labelCol = 'label',\n                 featuresCol = 'features',\n                 scalerType = 'standard', save = False, \n                 normalise = False):\n    '''trains a neural network using sparkML'''\n    \n    # get train, test and N_features \n    train, test, \\\n        N_features = dataSparkML(df = df, regime = regime, labelCol = labelCol, \n                                 normalise = normalise, featuresCol = featuresCol,\n                                 save = save, scalerType = scalerType)\n    \n    # specify layers for the neural network:\n    layers = [N_features, 64, 64, 64, 64, 2]\n\n    # create the trainer and set its parameters\n    trainer = MultilayerPerceptronClassifier(maxIter=100, layers=layers, blockSize=128, seed=42)\\\n                    .setLabelCol(labelCol)\n    \n    print(trainer)\n\n    # train the model\n    model = trainer.fit(train)\n    if save:\n        if not dev_run:\n            model.save(f'{save}/MultilayerPerceptronClassifier/')\n    return train, test, model\n\n\ntrain, test, model = nnTrainModel(df = df, regime = 'low', normalise = True,\n                                  labelCol = 'is_good', scalerType = 'standard',\n                                  save = False)\n                                  \n\n# High training sources: 12,312,712 NoLimit\n# High training sources: PS1\n#  Low training sources:  6,065,529 PS1","user":"gaiauser","dateUpdated":"2021-10-05T09:20:52+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_335148336","id":"20210709-141040_1258934891","dateCreated":"2021-10-05T09:19:33+0000","dateStarted":"2021-10-05T09:20:52+0000","dateFinished":"2021-10-05T10:06:43+0000","status":"ABORT","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2284"},{"title":"Define evaluateModel","text":"%spark.pyspark\ndef evaluateModel(model, df, labelCol = 'label', evaluate = False,\n                  normalise = True, classLabels = False, save = False,\n                  step = np.arange(0.5, 0.99, 0.025)):\n    '''Apply a NN to new data, with the option to evaluate if test dataset'''\n    \n    # compute accuracy on the test set\n    result = model.transform(df)\n    \n#     print(\"Test set accuracy = \" + str(evaluator.evaluate(predictionAndLabels)))\n    \n    if evaluate:\n        predictionAndLabels = result.select(\"prediction\", 'is_good')\n        evaluator = MulticlassClassificationEvaluator(metricName=\"accuracy\").setLabelCol(labelCol)\n        # Call MLlib_confusion_matrix class to plot confusion matrix\n        res = MLlib_confusion_matrix(result, labelCol = labelCol)\n        res.confusionMatrix(classes = ['Bad', 'Good'], normalize = normalise)\n        \n        # Call plottingThreshold to explore the effect of Thresholding\n        plottingThreshold(result, labelCol = labelCol, classLabels = classLabels)\\\n            .threshold_subplots(step = step,  save = save)\n\n    return result","user":"gaiauser","dateUpdated":"2021-10-05T09:19:33+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"editorHide":true,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_-580807594","id":"20210823-110152_761421174","dateCreated":"2021-10-05T09:19:33+0000","status":"READY","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2285"},{"title":"Evaluate Model","text":"%spark.pyspark\n\nresult = evaluateModel(model = model, df = test, normalise = True,  evaluate = True, \n                      labelCol = 'is_good', classLabels = ['Spurious Sources', 'Good Sources'], save = False)","user":"gaiauser","dateUpdated":"2021-10-05T09:19:33+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"title":true,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573552_-1332237467","id":"20210712-163323_837319583","dateCreated":"2021-10-05T09:19:33+0000","status":"READY","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2286"},{"text":"%spark.pyspark\nresult.createOrReplaceTempView('dcr_ML_res')","user":"gaiauser","dateUpdated":"2021-10-05T09:19:33+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1633425573553_-962516394","id":"20210903-163149_258646994","dateCreated":"2021-10-05T09:19:33+0000","status":"READY","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:2287"}],"name":"QC_cuts_dev","id":"2GKXU3EK8","noteParams":{},"noteForms":{},"angularObjects":{"md:shared_process":[],"spark:gaiauser:":[]},"config":{"isZeppelinNotebookCronEnable":false,"looknfeel":"default","personalizedMode":"false"},"info":{}}
+{
+  "paragraphs": [
+    {
+      "text": "%spark.pyspark\n\nimport numpy as np\nimport pandas as pd\nimport pyspark.ml as ml\nfrom scipy.stats import kde\nimport matplotlib.pylab as plt\nfrom collections import Counter\nimport pyspark.sql.functions as f\nfrom pyspark.ml.feature import VectorAssembler\nfrom pyspark.sql.functions import lit, col, when, floor, udf, greatest\nfrom pyspark.ml.classification import MultilayerPerceptronClassifier\nfrom pyspark.ml.evaluation import MulticlassClassificationEvaluator\n\nuser_home = 'file:///user/dcr/'\n\ndev_run = True",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110153_1455329333",
+      "id": "20210706-142733_1394646815",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "focus": true,
+      "$$hashKey": "object:15390"
+    },
+    {
+      "text": "%spark.pyspark\ncolumns = 'source_id, parallax, parallax_error, parallax_over_error, pmra, astrometric_sigma5d_max,\\\npmdec, pmdec_error, pmra_error, astrometric_excess\\\n_noise ,visibility_periods_used, ruwe, astrometric_gof_al,\\\nipd_gof_harmonic_amplitude, ipd_frac_odd_win, ipd_frac_multi_peak, phot_g_mean_mag, phot_rp_mean_mag, g_rp'",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110154_-769768998",
+      "id": "20210802-092017_1155122414",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15392"
+    },
+    {
+      "title": "Collect Required Data",
+      "text": "%spark.pyspark\n# clear any previously cached data in the context (cells may be executed in any order, and out-dated by changes from here onwards)\nsqlContext.clearCache()\n\ndef initial_query(columns, how, limit = None, tablename = 'dcr_raw_sources'):\n    if how == 'NoLimit':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source')\n    elif how == 'limited':\n        raw_sources_df = spark.sql(f'SELECT {columns} FROM gaia_source \\\n                                        WHERE (1/parallax < limit)')\n\n    else: raise NameError('how must equal: [\"NoLimit\", \"limited\"]')\n                                    \n    raw_sources_df.createOrReplaceTempView(tablename)\n    \n    print(f'data at: {tablename}')\n\ninitial_query(columns = columns, how = 'NoLimit')\n\n\n# raw_sources_df.count()\n# EDR3: 1,055,241,799 sources in XXmin XXsec (<3 kpcs)\n# EDR3: 574,486,895 sources in 00min 02sec (<1 kpcs)\n# EDR3: 357,995,072 sources in 00min 02sec (<0.1 kpcs)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110154_-1880461219",
+      "id": "20210706-142657_7677965",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15393"
+    },
+    {
+      "text": "%spark.pyspark\n# raw_sources_df.count()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110154_890155302",
+      "id": "20210727-133513_1982076653",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15394"
+    },
+    {
+      "title": "Show Tables",
+      "text": "%spark.pyspark\n\nspark.catalog.listTables()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110154_1022767209",
+      "id": "20210706-141918_2051034386",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15395"
+    },
+    {
+      "title": "define plotTypes",
+      "text": "%spark.pyspark\ndef selectPlotType(x, y, plotType = 'scatter', ax = False, cmap = None, color = None,\n                  label = None, s = 1, white_nan = False, bins = 100, cbar = True):\n    if plotType == 'scatter':\n        scatter(x, y, ax = ax,\n                color = color, label = label, s = s)\n    elif plotType == 'kdeHeatmap':\n         kdeHeatmap(x, y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2Dhist':\n         hist2d(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    elif plotType == '2DhistSub':\n         hist2dSubplots(x,y, ax = ax, cmap = cmap, \n           white_nan = True, bins = bins, cbar = cbar)\n    else: raise nameError('plotType must be one of [\"scatter\", \"kdeHeatmap\", \"2Dhist\", 2DhistSub]')\n    \ndef hist2dSubplots(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        addColorbarSubplots(cmap = cmap, im = im, ax = ax)\n\ndef addColorbarSubplots(cmap, im, ax):\n    from mpl_toolkits.axes_grid1 import make_axes_locatable\n    h = im[0]\n    divider = make_axes_locatable(ax)\n    cax = divider.append_axes('right', size='5%', pad=0.05)\n    sm = plt.cm.ScalarMappable(cmap='cividis', norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm, cax = cax)\n        \ndef kdeHeatmap(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a kdeHeatmap'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n\n    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents\n    nbins=bins\n    k = kde.gaussian_kde([x,y])\n    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]\n    zi = k(np.vstack([xi.flatten(), yi.flatten()]))\n\n    # Make the plot\n    im = ax.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto', cmap = cmap)\n    if cbar:\n        add_colorbar(cmap = cmap, im = im)\n    \ndef scatter(x,y, ax = False, color = None, label = None, s = 1):\n    '''creates a scatter plot'''\n    if not ax:\n        ax = plt.figure(111)\n    ax.scatter(x, y, marker = '.', s = s, c = color, label = label)\n    \ndef hist2d(x,y, ax = False, cmap = 'cividis', white_nan = False, bins = 100, cbar = True):\n    '''creates a 2dhist plot'''\n    \n    if not ax:\n        ax = plt.figure(111)\n    if white_nan:\n        cmap = whiteNan(cmap)\n    im = ax.hist2d(x, y, bins=bins, cmap=cmap)\n    if cbar:\n        add_colorbar(cmap = cmap, im = im)\n        \ndef add_colorbar(cmap, im):\n    h = im[0]\n    sm = plt.cm.ScalarMappable(cmap='cividis', norm=plt.Normalize(vmin=np.min(h), vmax=np.max(h)))\n    plt.colorbar(sm)\n    \ndef whiteNan(cmap):\n    '''adds white base for colormaps'''\n    \n    from matplotlib import cm\n    from matplotlib.colors import ListedColormap\n    \n    cmap = cm.get_cmap(cmap, 256)\n    newcolors = cmap(np.linspace(0, 1, 256))\n    white = np.array([1, 1, 1, 0])\n    newcolors[:2, :] = white\n    cmap = ListedColormap(newcolors)\n    return cmap",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110155_1003317682",
+      "id": "20210903-105612_1877843291",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15396"
+    },
+    {
+      "title": "Get HEALPix-6 Factor",
+      "text": "%spark.pyspark\n\ndef healpix_level_N(source_id, level, constant = False):\n    '''returns the HEALpix pixel from Gaia Source ID'''\n    if constant == True:\n        return 2**35 * 4**(12-level)\n    else:    \n        return np.floor(source_id/(2**35 * 4**(12-level)))\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110156_-2089491144",
+      "id": "20210706-145744_1307665902",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15398"
+    },
+    {
+      "text": "%md\n\n### Sort *'Labelled'* Training Data\n\n- Good data = each HEALPix level-6 pixel that contains no sources with parallax_over_error < −3.5.\n- Bad data = parallax_over_error < −4.5\n\n### With further split into SNR bins\n\n* High SNR = parallax_over_error (SNR) > 4.5\n* Low SNR = -3.5 < SNR < 4.5",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110156_-555485721",
+      "id": "20210706-145747_58341513",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15399"
+    },
+    {
+      "title": "Define features",
+      "text": "%spark.pyspark\n\nfactor = healpix_level_N(source_id = None, level = 6, constant = True)\n\ndef getFeatures(withPhotometric = False):\n    # select features to use\n    features = [\n        'source_id', 'parallax_error', 'parallax_over_error',\n        'pmra', 'astrometric_sigma5d_max', 'pmdec',\n        'pmdec_error', 'pmra_error', 'astrometric_excess_noise',\n        'visibility_periods_used', 'ruwe', 'astrometric_gof_al',\n        'ipd_gof_harmonic_amplitude', 'ipd_frac_odd_win', 'ipd_frac_multi_peak',]\n        \n    if withPhotometric:\n        features.extend(['m_g', 'g_rp'])\n    \n    return features\n\nfeatures = getFeatures()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110157_-2114969422",
+      "id": "20210709-135723_1861639683",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15400"
+    },
+    {
+      "title": "Select Good or Bad Sources",
+      "text": "%spark.pyspark\n\ndef select_bad_sources(table):\n    '''Selects bad sources from eDR3'''\n    \n    bad = spark.sql(f'SELECT a.* \\\n                    FROM {table} as a\\\n                    WHERE parallax_over_error < -4.5')\n    # print(f'{bad.count()} bad sources')\n    print(f'Collected bad sources')\n    \n    return bad\n\ndef crossMatch_sql(crossMatch = False):\n    if crossMatch == False:\n        return ''\n    elif crossMatch == 'ps1' or crossMatch == 'PS1':\n        return \"JOIN gaia_source_ps1_best_neighbours USING (source_id)\"\n    elif crossMatch == 'tmass':\n        return \"JOIN gaia_source_tmasspsc_best_neighbours USING (source_id)\"\n    elif crossMatch == 'wise':\n        return \"JOIN gaia_source_allwise_best_neighbours USING (source_id)\"\n        \n    else: raise NameError('crossMatch must equal one of: [False, \"ps1\", \"tmass\", \"wise\"]')\n\ndef select_good_sources(table, crossMatch = False):\n    '''Selects good sources from eDR3'''\n    \n    cross = crossMatch_sql(crossMatch = crossMatch)\n    \n    good = spark.sql(f'SELECT a.* \\\n    FROM {table} as a \\\n    {cross} \\\n    WHERE (a.parallax_over_error > 4.5 AND (a.phot_g_mean_mag - a.phot_rp_mean_mag) <1.8) \\\n    OR (a.parallax_over_error < 4.5 AND a.parallax_over_error > -3.0 AND \\\n    (a.phot_g_mean_mag - a.phot_rp_mean_mag) <1.5)')\n    # print(f'{good.count()} good sources')\n    print(f'Collected Good sources')\n    return good\n\ndef with_flags(table, features = \"*\", crossMatch = False):\n    '''Collects data with an \"is_good\" flag for trianing NN'''\n    \n    # Select training data with flag for good or bad data.\n    good = select_good_sources(table, crossMatch = crossMatch).select(features).withColumn('is_good', lit(1))\n    bad = select_bad_sources(table).select(features).withColumn('is_good', lit(0))\n    \n    factor = healpix_level_N(source_id = None, level = 6, constant = True)\n    \n    # Join data with a column for |SNR|\n    df = good.union(bad)\\\n                    .withColumn('abs_SNR', \n                                f.abs(col('parallax_over_error')))\\\n                    .withColumn('hpx6', floor(col('source_id')/factor))\n    print('DataBase with flags')\n    \n    return df",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110157_1067237159",
+      "id": "20210709-135722_1405384887",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15401"
+    },
+    {
+      "title": "Drop Bad Pixels",
+      "text": "%spark.pyspark\n\n# Total pixels = 49,152 (4192)\n\ndef drop_bad_pixels(data, all_sources):\n    '''drop good sources from HEALpix6 pixels that contain bad sources'''\n    \n    # Identify bad pixels\n    # bad_pixels = set([int(i[0]) for i in df.filter(col('parallax_over_error') < -3.0)\\\n    #                   .select('hpx6').toPandas().values])\n    \n    bad_pixels = spark.sql(f'SELECT FLOOR(a.source_id/{factor}) as hpx6 \\\n    FROM {all_sources} as a \\\n    WHERE (a.parallax_over_error < - 3.5)').distinct()\n                      \n    # bad_pixels = data.filter(col('parallax_over_error') < -3.5).select('hpx6').distinct() # spark version of above\n\n    # Drop data from pixels that contain bad datapoints\n    # data = data.filter((col('is_good') == 0) | \n    #               ((col('is_good') == 1) & \n    #                 (~data.hpx6.isin(bad_pixels))))\n    \n    bad = data.filter((col('is_good') == 0))\n    # Add bad.columns to ensure correct column order for join\n    good = data.join(bad_pixels, 'hpx6', how = \"left_anti\")[bad.columns]\n    \n    df = good.union(bad)\n\n    # N_good_pixels = data.select('hpx6').distinct()\n    return df\n\ndf = with_flags(table = 'dcr_raw_sources', features = features, crossMatch = 'PS1')\ndf = drop_bad_pixels(df, all_sources = 'dcr_raw_sources')\ndf = df.cache()\ndf.createOrReplaceTempView('dcr_data')",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110157_119425864",
+      "id": "20210709-135721_329827109",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15402"
+    },
+    {
+      "text": "%spark.pyspark\ndf.createOrReplaceTempView('dcr_training_sources')",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110157_257921256",
+      "id": "20210804-134330_1534317830",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15403"
+    },
+    {
+      "title": "def spacialDistributionSubplotHex",
+      "text": "%spark.pyspark\ndef spacialDistributionSubplotHex(class_val = 0, label = None, limit = None, labelCol = 'label', color = 'k', \n                                save = False, sourceCat = 'dcr_raw_sources', vmax = None, projection = 'galactic',\n                                trainingCat = 'dcr_training_sources', fontsize = 14, scale = None,):\n\n    plt.figure(2, figsize = (24.18, 7.0))\n    plt.rcParams['font.size'] = fontsize\n    \n    # Allows a choice of projections.\n    if projection == 'equitorial': coord_cols = ['ra', 'dec']\n    elif projection == 'galactic': coord_cols = ['l', 'b']\n    \n    quick_plot_filter = f' AND MOD(a.source_id, {limit}) = 0'\n    \n    dat = spark.sql(f'SELECT b.{labelCol}, a.{coord_cols[0]}, a.{coord_cols[1]} FROM {sourceCat} as a, \\\n                                                 {trainingCat} as b \\\n                                                 WHERE a.source_id = b.source_id \\\n                                                 {quick_plot_filter}')\n    dat = dat.withColumn(f'{coord_cols[0]}_rad', (col(coord_cols[0]) - 180.0) * np.pi / 180.0)\\\n                .withColumn(f'{coord_cols[1]}_rad', (col(coord_cols[1]) * np.pi / 180.0))\\\n                    .select([f'{coord_cols[0]}_rad', f'{coord_cols[1]}_rad', labelCol])\\\n                        .toPandas()\n    \n    print('data in Pandas')\n    for i, value in enumerate(class_val):\n        tmp = dat[dat[labelCol] == value]\n        plt.subplot(1,2,i+1, projection='aitoff')\n        plt.grid(True)\n        if vmax:\n            vm = vmax[i]; extend = 'max'\n        else: vm = None; extend = None\n        plt.title(f'{label[i]}', fontsize = fontsize+4)\n        image = plt.hexbin(tmp[f'{coord_cols[0]}_rad'].values, tmp[f'{coord_cols[1]}_rad'].values, cmap='cividis', \n                   gridsize=100, mincnt=1, bins=scale, vmax = vm, alpha = 1.0) \n        cb = plt.colorbar(image, extend = extend, spacing = 'proportional') \n    plt.tight_layout()\n    if save:\n        if not dev_run:\n            savefigs(save)\n    plt.show()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110157_-651201915",
+      "id": "20210903-134105_1093168040",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15404"
+    },
+    {
+      "text": "%md\n# Regimes:\n\n### Low |SNR|\n* |SNR| < 4.5 but training data omits data with |SNR| < 4.5 to prevent the imbalance in coverage of SNR-space in the good and bad training sets from impacting our classifications in the low-SNR regime.\n* Does not include |SNR| as a feature.\n\n### High |SNR|\n* Uses the entire training set",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110163_420381520",
+      "id": "20210709-135720_1210777367",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15406"
+    },
+    {
+      "title": "Return correct data for regime",
+      "text": "%spark.pyspark\n\ndef return_low_snr(df, features = '*'):\n    '''Creates low SNR training dataset. (-3.5 < SNR < 4.5)\n    This dataset does not include parallax over error as a training feature\n    Counter intuitively, this dataset only includes data with |SNR| > 4.5.'''\n    df = df.select(features)\\\n                .filter((col('abs_SNR') > 4.5) | (col('is_good') == 0))\n    \n#     print(f' Low SNR dataset contains {df.filter(df.is_good == 1).count()} \\\n# \"good\" data points and {df.filter(df.is_good == 0).count()} \"bad\" datapoints.')\n    print('Low SNR dataset returned')\n    return df\n\ndef return_high_snr(df, features = '*'):\n    '''Creates high SNR training dataset. (|SNR| > 4.5)\n    This dataset does include parallax over error as a training feature.'''\n    \n#     print(f'High SNR dataset contains {df.filter(df.is_good == 1).count()} \\\n# \"good\" data points and {df.filter(df.is_good == 0).count()} \"bad\" datapoints.')\n    print('High SNR dataset returned')\n    \n    return df.select(features)\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110163_-1903853107",
+      "id": "20210709-140832_772076010",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15407"
+    },
+    {
+      "title": "Split into Train and Test Data",
+      "text": "%spark.pyspark\n\ndef split_data(data, split = 0.2, seed = 42):\n    '''Splits a SQL.DataFrame into independent training and test datasets'''\n    \n    return data.randomSplit([1-split, split], seed)\n\ndef get_training_data(df, regime, split = 0.2, seed = 42,):\n    '''returns tuple of DataFrames of training and test data \n       for either High SNR or Low SNR regimes.'''\n    if 'high' in regime:\n        df = return_high_snr(df)\n        \n    elif 'low' in regime:\n        df = return_low_snr(df)\n        \n    else: raise NameError('regime is either \"high\" or \"low\"')\n    return split_data(df, split, seed)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110163_-585087762",
+      "id": "20210709-140840_427510120",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15408"
+    },
+    {
+      "title": "Select Training Features",
+      "text": "%spark.pyspark\n\ndef select_training_features(df, regime):\n    '''selects correct features for the given regime'''\n    \n    features = [i for i in df.columns if i not in ['source_id', 'parallax_over_error', \n                                                   'is_good', 'hpx6', 'm_g', 'g_rp']]\n    \n    if 'low' in regime:\n        features.remove('abs_SNR')\n    # elif not 'high' in regime: raise NameError('regime is either \"high\" or \"low\"')\n    return features",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110163_-623077451",
+      "id": "20210709-140841_1557013711",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15409"
+    },
+    {
+      "text": "%md\n\n# Normalization\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110164_-1767759522",
+      "id": "20210709-141041_2000243903",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15410"
+    },
+    {
+      "title": "getScaler",
+      "text": "%spark.pyspark\n\ndef getScaler(scalerType):\n    '''Returns correct scaler for chosen normalization.'''\n    \n    if scalerType == 'standard': \n        from pyspark.ml.feature import StandardScaler\n        Scaler = StandardScaler(withMean=True, withStd = True)\n    elif scalerType == 'MinMax':\n        from pyspark.ml.feature import MinMaxScaler\n        Scaler = MinMaxScaler()\n    else: raise NameError(f'scalerType can be either \"MinMax\" or \"standard\" not {scaler}')\n    return Scaler\n\n\ndef getScalerModel(df, scalerType = 'standard', featuresCol = 'features',\n                       outCol = 'norm_features', save = False):\n    '''normalizes DenseVectors for MLlib'''\n\n    scaler = getScaler(scalerType = scalerType) # Get scaler\n    scaler.setInputCol(featuresCol)         # Set feature column name\n    scaler.setOutputCol(outCol)\n    model = scaler.fit(df)\n    if save:\n        model.save(f'{save}/{scalerType}_normalisation_model')\n        print(f'Normalisation model saved at \"{save}/{scalerType}_normalisation_model\"')\n    return model\n\ndef normaliseData(df, model,):\n    '''normalizes featureCol of df using model from \"getScalerModel\" '''\n\n    return model.transform(df)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110164_-1274547385",
+      "id": "20210712-163126_1792127427",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15411"
+    },
+    {
+      "title": "Build the Model",
+      "text": "%spark.pyspark\n\ndef dataSparkML(df, regime, labelCol = 'labels', featuresCol = 'features', \n                normalise = False, scalerType = 'standard', save = False):\n    '''get train and test dataset for input using pyspark.ml'''\n\n    # Get data and label columns for the selected regime\n    data  = get_training_data(df, regime = regime)\n    train_features = select_training_features(data[0], regime = regime)\n    N_features = len(train_features)\n    # Assemble assember to merge features into DenseVector\n    assembler = VectorAssembler(inputCols=train_features,\n                                outputCol=featuresCol)\n    \n    \n    train = assembler.transform(data[0])\\\n                .select(['source_id', featuresCol, labelCol])\n    test  = assembler.transform(data[1])\\\n                .select(['source_id', featuresCol, labelCol])\n    \n    if normalise:\n        # We rename featuresCol to maintain col name for later analysis\n        model = getScalerModel(train.withColumnRenamed(featuresCol, 'inputFeatures'),\n                               scalerType = scalerType, featuresCol = 'inputFeatures', \n                               outCol = featuresCol, save = save)\n        \n        # Normalise each dataset with the training data distributions\n        train = normaliseData(train.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        test  = normaliseData( test.withColumnRenamed(featuresCol, 'inputFeatures'), model)\n        \n        print(f'Training data = {train.count()} sources')\n    \n    return (train, test, N_features)\n\n# train,test, N_features, model = dataSparkML(df, regime = 'low', labelCol = 'is_good', normalise = True)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110164_-256041050",
+      "id": "20210709-141041_25617336",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15412"
+    },
+    {
+      "title": "MLlib_confusion_matrix",
+      "text": "%spark.pyspark\n\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pylab as plt\nfrom collections import Counter\n\nclass MLlib_confusion_matrix():\n    '''subclass to plot confusion matrix'''\n    def __init__(self, df, labelCol = 'label', classes = None, normalize = True):\n        self.df               = df\n        self.getLabelCol      = labelCol\n        self.grouped          = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix           = self.getConfusionMatrix()\n        self.normMatrix       = self.getNormConfusionMatrix()\n        self.confusion_matrix = self.confusionMatrix(classes, normalize)\n\n    def __repr__(self) : return f\"\"\"Class for plotting confusion matrix {self.normMatrix}\"\"\"\n\n    def getConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                                 (self.grouped.prediction == j)]['count'].values\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  c\n        return matrix\n\n    def getNormConfusionMatrix(self):\n        '''returns confusion matrix based on values'''\n\n        N_classes = len(set(self.grouped[self.getLabelCol]))\n        matrix = np.empty((N_classes, N_classes))\n        for i in range(N_classes):\n            for j in range(N_classes):\n                c = self.grouped[(self.grouped[self.getLabelCol] == i) & \n                        (self.grouped.prediction == j)]['count'].values\\\n                            /sum(self.grouped[(self.grouped[self.getLabelCol] == i)]['count'])\n                if len(c) == 0:\n                    c = 0 \n                matrix[i][j] =  np.round(c , 4)\n        return matrix\n    \n    def confusionMatrix(self, classes = None, normalize = True, save = False):\n        '''prints rich version of confusion matrix'''\n        if normalize: matrix = self.normMatrix\n        else: matrix = self.matrix\n        if classes == None:\n            classes = range(len(matrix))\n\n        N_classes = range(len(classes))\n        plt.rcParams['figure.figsize'] = (6,6)\n\n        plt.imshow(matrix, cmap = 'Greens', alpha = 0.75)\n        for i in N_classes: # Add values to max pooling\n            for j in N_classes:\n                text = plt.text(j, i, matrix[i][j],\n                               ha=\"center\", va=\"center\", color=\"k\", fontsize = 20)\n\n        #Add thick line to matrix\n        axis = plt.gca()\n        axis.set_yticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.set_xticks(np.arange(-0.5, len(classes)-0.5, 1), minor='True')\n        axis.yaxis.grid(True, which='minor', color = 'k', lw = 2)\n        axis.xaxis.grid(True, which='minor', color = 'k', lw = 2)\n        plt.xticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.yticks(N_classes, classes, rotation =0, fontsize = 14)\n        plt.xlabel('Predicted Class', fontsize = 16)\n        plt.ylabel('True Class', fontsize = 16)\n        if save:\n            if not dev_run:\n                savefigs(save)\n                savetxt(matrix, save)\n        \n        \nclass MLlibMultiClassEvaluator(MLlib_confusion_matrix):\n    '''class to calculate parameters of NN performance for binary classification'''\n    \n    def __init__(self, df, labelCol = 'label'):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        # self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        \n    # def __len__(self)         : return self.df.count()\n    # def __repr__(self)        : return f\"\"\"Evaluate ML performance for {len(self)} datapoints.\"\"\"\n    \n    def getAnalysis(self):\n        '''returns a pd.DataFrame for analysis'''\n        data = self.df.select(self.getLabelCol,'probability', 'prediction').toPandas()\n        for i in range(max(data[self.getLabelCol])+1):\n            data[f'prob'] = [max(j) for j in data.probability]\n        return data\n    \n    def getTruePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        tp = {}\n        for cat in range(len(conMat)):\n            tp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] == data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    tp[cat].append(tmp[cat])\n            return tp\n        \n        \n    def getFalsePositives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how True Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fp = {}\n        for cat in range(len(conMat)):\n            fp[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)].prediction)\n                for cat in range(len(conMat)):\n                    fp[cat].append(tmp[cat])\n            return fp        \n        \n    def getFalseNegatives(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculates how False Positives change by threshold'''\n        conMat = self.getConfusionMatrix()\n        data = self.getAnalysis()\n        fn = {}\n        for cat in range(len(conMat)):\n            fn[cat] = []\n        for cat in range(len(conMat)):\n            for threshold in step:\n                tmp = Counter(data[(data['prediction'] != data[self.getLabelCol]) & \n                                   (data[f'prob']>threshold)][self.getLabelCol])\n                for cat in range(len(conMat)):\n                    fn[cat].append(tmp[cat])\n            return fn\n        \n    def getPrecision(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate precision'''\n        precision = {}; true_positives = self.getTruePositives(step); \n        false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        precision = {}\n        for cat in range(len(conMat)):\n            precision[cat] = conMat[cat][cat]\n            for cat in range(len(conMat)):\n                precision[cat] = [tp / (tp+fp) for tp, fp in zip(true_positives[cat],false_positives[cat])]\n        return precision\n    \n    def getRecall(self, step = np.arange(0.0, 0.95, 0.01)):\n        '''calculate recall'''\n        conMat = self.getConfusionMatrix()\n        recall = {}; true_positives = self.getTruePositives(step); \n        false_negatives = self.getFalseNegatives(step)\n        for cat in range(len(conMat)):\n            recall[cat] = []\n            for cat in range(len(conMat)):\n                recall[cat] = [tp / (tp+fn) for tp, fn in zip(true_positives[cat],false_negatives[cat])]\n        return recall\n    \n    \nclass plottingThreshold(MLlibMultiClassEvaluator):\n    '''subclass of \"threshold\" for various plots of useful threshold parameters.'''\n    \n    def __repr__(self): return f\"\"\"Plotting software for 'threshold' objects\"\"\"\n    def __init__(self, df, labelCol = 'label', classLabels = False):\n        self.df            = df\n        self.getLabelCol   = labelCol\n        self.show          = df.show\n        # self.count         = df.count\n        # self.shape         = (df.count(), len(df.columns))\n        self.grouped       = df.groupBy(labelCol, 'prediction').count().toPandas()\n        self.matrix        = self.getConfusionMatrix()\n        self.classLabels   = classLabels\n        \n        \n    def getAxes(self,ax):\n        if ax == None:\n            ax = plt.subplot(111)\n        return ax\n\n    def plot_true_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), normalize = True, \n                            legend = True, save = False):\n        ax = self.getAxes(ax); true_positives = self.getTruePositives(step); \n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if normalize == True:\n                y = [i/max(true_positives[cat]) for i in true_positives[cat]]\n                ax.set_ylabel('Fraction of Total True Positives -->')\n            else:\n                y = [i/len(self.data[self.data.true_label == cat]) for i in true_positives[cat]]\n                ax.set_ylabel('True Positives -->')\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        if save:\n            if not dev_run:\n                savetxt(step, save+'_step')\n                savetxt(y, save+'_true_positives')\n\n    def plot_false_positives(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                            legend = True, save = False):\n        ax = self.getAxes(ax); false_positives = self.getFalsePositives(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            if max(false_positives[cat]) != 0:\n                y = [i/max(false_positives[cat]) for i in false_positives[cat]]\n            else: y = [i for i in false_positives[cat]]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('<-- Fraction of Total False Positives')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_false_positives')\n\n    def plot_precision(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                        legend = True, save = False):\n        ax = self.getAxes(ax); precision = self.getPrecision(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = precision[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Precision -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_precision')\n\n    def plot_recall(self, ax = None, step = np.arange(0.0, 0.95, 0.01), \n                    legend = True, save = False):\n        ax = self.getAxes(ax); recall = self.getRecall(step)\n        conMat = self.getConfusionMatrix()\n        for cat in range(len(conMat)):\n            y = recall[cat]\n            label = self.getLabels(count = cat)\n            ax.plot(step, y, label = label)\n        if legend:\n            ax.legend()\n        ax.grid('on')\n        ax.set_xlabel('Threshold')\n        ax.set_ylabel('Recall -->')\n        if save:\n            if not dev_run:\n                savetxt(y, save+'_recall')\n        \n    def getLabels(self, count):\n        if self.classLabels:\n            label = self.classLabels[count]\n        else:\n            label = count\n        return label\n\n    def threshold_subplots(self, step = np.arange(0.0, 0.95, 0.01), figsize=(15, 8), save = False):\n        import matplotlib.gridspec as gridspec\n        fig = plt.figure(figsize = figsize)\n        gs = gridspec.GridSpec(ncols=2, nrows=2, figure=fig)\n        ax1 = fig.add_subplot(gs[0, 0])\n        ax2 = fig.add_subplot(gs[0, 1])\n        ax3 = fig.add_subplot(gs[1, 0])\n        ax4 = fig.add_subplot(gs[1, 1])\n\n        axs = [ax1, ax2, ax3, ax4]\n        self.plot_precision      (ax = axs[0], step = step, legend = False, save = save)\n        self.plot_recall         (ax = axs[1], step = step, legend = False, save = save)\n        self.plot_true_positives (ax = axs[2], step = step, legend = True , save = save)\n        self.plot_false_positives(ax = axs[3], step = step, legend = True , save = save)\n        plt.tight_layout()\n        \n        if save:\n            if not dev_run:\n                savefigs(save)\n        plt.show()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110164_707829765",
+      "id": "20210706-145746_766891138",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15413"
+    },
+    {
+      "text": "%spark.pyspark\nsqlContext.clearCache()",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110165_1361405791",
+      "id": "20210804-160246_1472830535",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15414"
+    },
+    {
+      "title": "Train the model",
+      "text": "%spark.pyspark\n\ndef nnTrainModel(df, regime, labelCol = 'label',\n                 featuresCol = 'features',\n                 scalerType = 'standard', save = False, \n                 normalise = False):\n    '''trains a neural network using sparkML'''\n    \n    # get train, test and N_features \n    train, test, \\\n        N_features = dataSparkML(df = df, regime = regime, labelCol = labelCol, \n                                 normalise = normalise, featuresCol = featuresCol,\n                                 save = save, scalerType = scalerType)\n    \n    # specify layers for the neural network:\n    layers = [N_features, 64, 64, 64, 64, 2]\n\n    # create the trainer and set its parameters\n    trainer = MultilayerPerceptronClassifier(maxIter=100, layers=layers, blockSize=128, seed=42)\\\n                    .setLabelCol(labelCol)\n    \n    print(trainer)\n\n    # train the model\n    model = trainer.fit(train)\n    if save:\n        if not dev_run:\n            model.save(f'{save}/MultilayerPerceptronClassifier/')\n    return train, test, model\n\n\ntrain, test, model = nnTrainModel(df = df, regime = 'low', normalise = True,\n                                  labelCol = 'is_good', scalerType = 'standard',\n                                  save = False)\n                                  \n\n# High training sources: 12,312,712 NoLimit\n# High training sources: PS1\n#  Low training sources:  6,065,529 PS1",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110165_742002549",
+      "id": "20210709-141040_1258934891",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15415"
+    },
+    {
+      "title": "Define evaluateModel",
+      "text": "%spark.pyspark\ndef evaluateModel(model, df, labelCol = 'label', evaluate = False,\n                  normalise = True, classLabels = False, save = False,\n                  step = np.arange(0.5, 0.99, 0.025)):\n    '''Apply a NN to new data, with the option to evaluate if test dataset'''\n    \n    # compute accuracy on the test set\n    result = model.transform(df)\n    \n#     print(\"Test set accuracy = \" + str(evaluator.evaluate(predictionAndLabels)))\n    \n    if evaluate:\n        predictionAndLabels = result.select(\"prediction\", 'is_good')\n        evaluator = MulticlassClassificationEvaluator(metricName=\"accuracy\").setLabelCol(labelCol)\n        # Call MLlib_confusion_matrix class to plot confusion matrix\n        res = MLlib_confusion_matrix(result, labelCol = labelCol)\n        res.confusionMatrix(classes = ['Bad', 'Good'], normalize = normalise)\n        \n        # Call plottingThreshold to explore the effect of Thresholding\n        plottingThreshold(result, labelCol = labelCol, classLabels = classLabels)\\\n            .threshold_subplots(step = step,  save = save)\n\n    return result",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110165_1499205692",
+      "id": "20210823-110152_761421174",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15416"
+    },
+    {
+      "title": "Evaluate Model",
+      "text": "%spark.pyspark\n\nresult = evaluateModel(model = model, df = test, normalise = True,  evaluate = True, \n                      labelCol = 'is_good', classLabels = ['Spurious Sources', 'Good Sources'], save = False)",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110165_447531446",
+      "id": "20210712-163323_837319583",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15417"
+    },
+    {
+      "text": "%spark.pyspark\nresult.createOrReplaceTempView('dcr_ML_res')",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T14:25:10+0000",
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1634135110166_591317598",
+      "id": "20210903-163149_258646994",
+      "dateCreated": "2021-10-13T14:25:10+0000",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:15418"
+    }
+  ],
+  "name": "experiments/stv/QC_dev",
+  "id": "2GJ24YPEM",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {
+    "md:shared_process": [],
+    "sh:shared_process": [],
+    "spark:gaiauser:": []
+  },
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {}
+}
