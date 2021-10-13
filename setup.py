@@ -27,7 +27,8 @@ setup(
         "Programming Language :: Python"
     ],
     install_requires=[
-        'zdairi @ git+https://github.com/stvoutsin/zdairi'
+        'zdairi @ git+https://github.com/stvoutsin/zdairi',
+        'simplejson'
     ]
 )
 
