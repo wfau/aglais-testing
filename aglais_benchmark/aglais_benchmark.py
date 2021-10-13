@@ -4,7 +4,7 @@ import subprocess
 import time
 from os import listdir
 from os.path import isfile, join
-import json
+import simplejson as json
 #import urllib.request, json
 import logging
 from multiprocessing import Pool, current_process
@@ -29,6 +29,7 @@ class AglaisBenchmarker(object):
         self.verbose = verbose
         self.configdir = zeppelin_configdir
         self.result_file = "output.json"
+        self.notebooks = []
         try:
             if notebook_config:
                 if notebook_config.startswith("http"):
@@ -73,8 +74,11 @@ class AglaisBenchmarker(object):
             # Make notebook
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0].decode().split("\n")
-            text = result[-2]
+            result = pipe.communicate()[0]
+
+            result = result.decode().split("\n")
+            text = result[0]
+
             notebookid = text.split(": ")[1]
 
             # Run notebook
@@ -85,8 +89,9 @@ class AglaisBenchmarker(object):
             # Print notebook
             batcmd="zdairi --config " + config + " notebook print --notebook " + notebookid
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0].decode().split("\n")
-            json_notebook = json.loads("".join(result[2:]))
+            result = pipe.communicate()[0]
+            result = result.decode().split("\n")
+            json_notebook = json.loads("".join(result), strict=False)
 
             for cell in json_notebook["paragraphs"]:
                 if len(cell.get("results", []))>0:
@@ -194,3 +199,4 @@ if __name__ == '__main__':
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
+
