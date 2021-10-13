@@ -1,183 +1,186 @@
-{
-	"paragraphs": [{
-		"text": "%md\n\nThis simple example shows how to use the PySpark SQL API to execute a simple query on the main source catalogue and plot the results.\n\nNotes:\n\n* The cell containing the query below finishes instantly since it merely defines a \"transformation\" (in the language of Spark) without actually actioning it. It is only when something is done with the data selected by this transform (i.e. it is explicitly actioned as in the following cell) that execution occurs\n* Visualisation takes advantage of HEALPix pixelisation encoded in the Gaia source IDs, and the healpy Python package in conjunction with matplotlib\n* Links are provided in the final cell to the documentation for the packages used, along with other relevant resources.\n\n",
-		"user": "dcr",
-		"dateUpdated": "2021-08-23T12:25:55+0000",
-		"config": {
-			"colWidth": 12,
-			"fontSize": 9,
-			"enabled": true,
-			"results": {},
-			"editorSetting": {
-				"language": "markdown",
-				"editOnDblClick": true,
-				"completionKey": "TAB",
-				"completionSupport": false
-			},
-			"editorMode": "ace/mode/markdown",
-			"editorHide": true,
-			"tableHide": false
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1620377173732_-1618230946",
-		"id": "20210507-084613_357121151",
-		"dateCreated": "2021-05-07T08:46:13+0000",
-		"dateStarted": "2021-08-23T12:25:55+0000",
-		"dateFinished": "2021-08-23T12:25:55+0000",
-		"status": "FINISHED",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"focus": true,
-		"$$hashKey": "object:3627"
-	}, {
-		"title": "Set the resolution level and define the query",
-		"text": "%pyspark\n\nimport math\n\n# set the resolution of the counts\nhealpix_level = 6\n# HEALPix level : no. of pixels\n# 4 : 3072\n# 5 : 12288\n# 6 : 49152 ~ 1 square degree pixels\n# 7 : 196608\n\n# Note: the most significant four-byte word of the 8-byte Gaia source ID contains a HEALPix level 12 index from bit 35 and higher\nnside = int(math.pow(2, healpix_level))\npowers_of_2 = 35 + (12 - healpix_level)*2\ndivisor = int(math.pow(2, powers_of_2))\n\ndivisor\n\n# make the query: integer division via the PySpark SQL FLOOR function is used to create bin UIDs by which to group the count\ndf = spark.sql(\"SELECT FLOOR(source_id / %d\"%(divisor) + \") AS hpx_id, COUNT(*) AS n FROM gaia_source GROUP BY hpx_id\")\n\n",
-		"user": "dcr",
-		"dateUpdated": "2021-08-23T12:25:55+0000",
-		"config": {
-			"colWidth": 12,
-			"fontSize": 9,
-			"enabled": true,
-			"results": {},
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"editorMode": "ace/mode/python",
-			"title": true,
-			"editorHide": false
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1598439438242_-1396466604",
-		"id": "20200826-105718_1698521515",
-		"dateCreated": "2020-08-26T10:57:18+0000",
-		"dateStarted": "2021-08-23T12:25:55+0000",
-		"dateFinished": "2021-08-23T12:25:57+0000",
-		"status": "FINISHED",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:3628"
-	}, {
-		"title": "Plot up the results",
-		"text": "%pyspark\n\n# plot up the sky counts\nimport numpy as np\nimport healpy as hp\nimport matplotlib.pyplot as plot\n\n# set a figure to use along with a plot size (landscape, golden ratio)\nplot.figure(1, figsize = (16.18, 10.0))\n\n# healpy constants appropriate to the HEALPix indexing encoded in Gaia source IDs\nnpix = hp.nside2npix(nside)\n\n# do the visualisation\narray_data = np.empty(npix)\n# access the underlying Spark Resilient Distributed Data object of the data frame to get the relevant data for plotting ...\nfor item in df.rdd.collect():  array_data[item[0]] = item[1]\n# ... this is just one way of several ...\n\n# plot the counts in Mollweide projection ...\nhp.mollview(array_data, fig=1, nest=True, coord='CG', unit = 'Star counts per HEALPixel', title='Gaia EDR3 source counts at HEALPix level %d'%(healpix_level), cmap='viridis', norm = 'log')\n# ... with an Equatorial graticule\nhp.graticule(coord='C', color='white')\n",
-		"user": "dcr",
-		"dateUpdated": "2021-08-23T12:28:45+0000",
-		"config": {
-			"colWidth": 12,
-			"fontSize": 9,
-			"enabled": true,
-			"results": {},
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"editorMode": "ace/mode/python",
-			"editorHide": false,
-			"title": true
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1598439630815_-1045535397",
-		"id": "20200826-110030_2095441495",
-		"dateCreated": "2020-08-26T11:00:30+0000",
-		"dateStarted": "2021-08-23T12:25:57+0000",
-		"dateFinished": "2021-08-23T12:26:45+0000",
-		"status": "FINISHED",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:3629"
-	}, {
-		"title": "Further reading and resources",
-		"text": "%md\n\n* [Gaia source ID definition (for HEALPix indexing)](https://dms.cosmos.esa.int/COSMOS/doc_fetch.php?id=2779219)\n* [Python package healpy](https://healpy.readthedocs.io/en/latest/index.html)\n* [Python matplotlib plotting library](https://matplotlib.org)\n* [Handy HEALPixel characteristics for various levels](https://lambda.gsfc.nasa.gov/toolbox/tb_pixelcoords.cfm)\n",
-		"user": "dcr",
-		"dateUpdated": "2021-08-23T12:26:45+0000",
-		"config": {
-			"colWidth": 12,
-			"fontSize": 9,
-			"enabled": true,
-			"results": {},
-			"editorSetting": {
-				"language": "markdown",
-				"editOnDblClick": true,
-				"completionKey": "TAB",
-				"completionSupport": false
-			},
-			"editorMode": "ace/mode/markdown",
-			"title": true,
-			"editorHide": true,
-			"tableHide": false
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1620378764257_1366007447",
-		"id": "20210507-091244_670006530",
-		"dateCreated": "2021-05-07T09:12:44+0000",
-		"dateStarted": "2021-08-23T12:26:45+0000",
-		"dateFinished": "2021-08-23T12:26:45+0000",
-		"status": "FINISHED",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:3630"
-	}, {
-		"text": "%spark.pyspark\n",
-		"user": "dcr",
-		"dateUpdated": "2021-08-23T12:26:46+0000",
-		"config": {
-			"colWidth": 12,
-			"fontSize": 9,
-			"enabled": true,
-			"results": {},
-			"editorSetting": {
-				"language": "python",
-				"editOnDblClick": false,
-				"completionKey": "TAB",
-				"completionSupport": true
-			},
-			"editorMode": "ace/mode/python"
-		},
-		"settings": {
-			"params": {},
-			"forms": {}
-		},
-		"apps": [],
-		"jobName": "paragraph_1598439706425_2064722810",
-		"id": "20200826-110146_414730471",
-		"dateCreated": "2020-08-26T11:01:46+0000",
-		"status": "FINISHED",
-		"errorMessage": "",
-		"progressUpdateIntervalMs": 500,
-		"$$hashKey": "object:3631"
-	}],
-	"name": "/AglaisPublicExamples/Source counts over the sky",
-	"id": "2FKJ25GVF",
-	"noteParams": {},
-	"noteForms": {},
-	"angularObjects": {
-		"md:shared_process": [],
-		"spark:dcr:": []
-	},
-	"config": {
-		"isZeppelinNotebookCronEnable": false,
-		"looknfeel": "default",
-		"personalizedMode": "false"
-	},
-	"info": {}
+﻿{
+  "paragraphs": [
+    {
+      "text": "%md\n\nThis simple example shows how to use the PySpark SQL API to execute a simple query on the main source catalogue and plot the results.\n\nNotes:\n\n* The cell containing the query below finishes instantly since it merely defines a \"transformation\" (in the language of Spark) without actually actioning it. It is only when something is done with the data selected by this transform (i.e. it is explicitly actioned as in the following cell) that execution occurs\n* Visualisation takes advantage of HEALPix pixelisation encoded in the Gaia source IDs, and the healpy Python package in conjunction with matplotlib\n* Links are provided in the final cell to the documentation for the packages used, along with other relevant resources.\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T10:28:08+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1634120888236_987645062",
+      "id": "20210507-084613_357121151",
+      "dateCreated": "2021-10-13T10:28:08+0000",
+      "status": "READY",
+      "focus": true,
+      "$$hashKey": "object:5925"
+    },
+    {
+      "title": "Set the resolution level and define the query",
+      "text": "%pyspark\n\nimport math\n\n# set the resolution of the counts\nhealpix_level = 6\n# HEALPix level : no. of pixels\n# 4 : 3072\n# 5 : 12288\n# 6 : 49152 ~ 1 square degree pixels\n# 7 : 196608\n\n# Note: the most significant four-byte word of the 8-byte Gaia source ID contains a HEALPix level 12 index from bit 35 and higher\nnside = int(math.pow(2, healpix_level))\npowers_of_2 = 35 + (12 - healpix_level)*2\ndivisor = int(math.pow(2, powers_of_2))\n\ndivisor\n\n# make the query: integer division via the PySpark SQL FLOOR function is used to create bin UIDs by which to group the count\ndf = spark.sql(\"SELECT FLOOR(source_id / %d\"%(divisor) + \") AS hpx_id, COUNT(*) AS n FROM gaia_source GROUP BY hpx_id\")\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T10:28:08+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1634120888236_1342228443",
+      "id": "20200826-105718_1698521515",
+      "dateCreated": "2021-10-13T10:28:08+0000",
+      "status": "READY",
+      "$$hashKey": "object:5926"
+    },
+    {
+      "title": "Plot up the results",
+      "text": "%pyspark\n\n# plot up the sky counts\nimport numpy as np\nimport healpy as hp\nimport matplotlib.pyplot as plot\n\n# set a figure to use along with a plot size (landscape, golden ratio)\nplot.figure(1, figsize = (16.18, 10.0))\n\n# healpy constants appropriate to the HEALPix indexing encoded in Gaia source IDs\nnpix = hp.nside2npix(nside)\n\n# do the visualisation\narray_data = np.empty(npix)\n# access the underlying Spark Resilient Distributed Data object of the data frame to get the relevant data for plotting ...\nfor item in df.rdd.collect():  array_data[item[0]] = item[1]\n# ... this is just one way of several ...\n\n# plot the counts in Mollweide projection ...\nhp.mollview(array_data, fig=1, nest=True, coord='CG', unit = 'Star counts per HEALPixel', title='Gaia EDR3 source counts at HEALPix level %d'%(healpix_level), cmap='viridis', norm = 'log')\n# ... with an Equatorial graticule\nhp.graticule(coord='C', color='white')\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T10:28:08+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1634120888236_580312503",
+      "id": "20200826-110030_2095441495",
+      "dateCreated": "2021-10-13T10:28:08+0000",
+      "status": "READY",
+      "$$hashKey": "object:5927"
+    },
+    {
+      "title": "Further reading and resources",
+      "text": "%md\n\n* [Gaia source ID definition (for HEALPix indexing)](https://dms.cosmos.esa.int/COSMOS/doc_fetch.php?id=2779219)\n* [Python package healpy](https://healpy.readthedocs.io/en/latest/index.html)\n* [Python matplotlib plotting library](https://matplotlib.org)\n* [Handy HEALPixel characteristics for various levels](https://lambda.gsfc.nasa.gov/toolbox/tb_pixelcoords.cfm)\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T10:28:08+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1634120888236_83436267",
+      "id": "20210507-091244_670006530",
+      "dateCreated": "2021-10-13T10:28:08+0000",
+      "status": "READY",
+      "$$hashKey": "object:5928"
+    },
+    {
+      "text": "%spark.pyspark\n",
+      "user": "gaiauser",
+      "dateUpdated": "2021-10-13T10:28:08+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1634120888236_1331045700",
+      "id": "20200826-110146_414730471",
+      "dateCreated": "2021-10-13T10:28:08+0000",
+      "status": "READY",
+      "$$hashKey": "object:5929"
+    }
+  ],
+  "name": "Source counts over the sky",
+  "id": "2GMFTMMKW",
+  "defaultInterpreterGroup": "spark",
+  "version": "0.10.0",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {},
+  "path": "/AglaisPublicExamples/Source counts over the sky"
 }
