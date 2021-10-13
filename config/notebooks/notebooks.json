@@ -23,6 +23,18 @@
               "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/public_examples/Good_astrometric_solutions_via_ML_Random_Forrest_classifier.json",
               "totaltime" : 760,
               "results" : []
+           },
+           {
+              "name" : "QC_cuts_dev.json",
+              "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/public_examples/QC_cuts_dev.json",
+              "totaltime" : 25200,
+              "results" : []
+           },
+           {
+              "name" : "WD_detection_dev.json",
+              "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/public_examples/WD_detection_dev.json",
+              "totaltime" : 50000,
+              "results" : []
            }
 
 ]
