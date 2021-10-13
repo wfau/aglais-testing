@@ -16,7 +16,7 @@ setup(
     description = ("A testing suite for Aglais"),
     license = "BSD",
     keywords = "aglais_benchmark",
-    url = "https://github.com/wfau/aglais-notebooks",
+    url = "https://github.com/wfau/aglais-testing",
     include_package_data = True,
     packages=['aglais_benchmark'],
     long_description="README",
@@ -27,7 +27,7 @@ setup(
         "Programming Language :: Python"
     ],
     install_requires=[
-        'zdairi'
+        'zdairi @ git+https://github.com/stvoutsin/zdairi'
     ]
 )
 
