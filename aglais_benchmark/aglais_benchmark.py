@@ -104,9 +104,9 @@ class AglaisBenchmarker(object):
                             break
 
             # Delete notebook
-            batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
-            pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            os.remove(tmpfile)
+            #batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
+            #pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            #os.remove(tmpfile)
 
         except Exception as e:
             status = "ERROR"
