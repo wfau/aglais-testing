@@ -5,7 +5,6 @@ import time
 from os import listdir
 from os.path import isfile, join
 import simplejson as json
-#import urllib.request, json
 import logging
 from multiprocessing import Pool, current_process
 import random
@@ -20,7 +19,7 @@ class AglaisBenchmarker(object):
         :type urlpath: str
         :rtype: dict
         """
-	response = requests.get(urlpath).text
+        response = requests.get(urlpath).text
         d = json.loads(response, strict=False)
         return d
 
