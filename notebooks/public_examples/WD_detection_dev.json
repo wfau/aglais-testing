@@ -167,7 +167,7 @@
       "$$hashKey": "object:17997"
     },
     {
-      "text": "%spark.pyspark\ndf = get_data(wd_filename = f'file:///user/dcr/data/eDR3_wd_full.csv', makeQueryable = 'dcr_raw_sources',\n             qualityControl = True, limit = 3000, threshold = 0.5, addAbsolute = True)\n             \n# df.count()",
+      "text": "%spark.pyspark\ndf = get_data(wd_filename = f'file:///user/dcr/data/edr3_WDs.csv', makeQueryable = 'dcr_raw_sources',\n             qualityControl = True, limit = 3000, threshold = 0.5, addAbsolute = True)\n             \n# df.count()",
       "user": "gaiauser",
       "dateUpdated": "2021-10-13T14:22:26+0000",
       "config": {
