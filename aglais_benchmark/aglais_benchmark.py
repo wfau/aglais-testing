@@ -77,7 +77,6 @@ class AglaisBenchmarker(object):
 
             result = result.decode().split("\n")
             text = result[0]
-
             notebookid = text.split(": ")[1]
 
             # Run notebook
@@ -126,17 +125,34 @@ class AglaisBenchmarker(object):
 
         results = []
         if concurrent:
+            if self.verbose:
+                print ("Test started [Multi User]")
             results = self._run_parallel(users)
         else:
+            if self.verbose:
+                print ("Test started [Single User]")
+
             results =  self._run_single()
 
         #with open(self.result_file, 'w+') as outfile:
         #    json.dump(results, outfile)
 
         end = time.time()
-        print ("Test completed after: {:.2f} seconds".format(end-start))
+        result = "SUCCESS"
+        for res in results:
+            for k,v in res.items():
+                if v["status"] != "SUCCESS":
+                    result = v["status"]
+                    break
+
+        if self.verbose:
+            print ("Test completed! ({:.2f} seconds)".format(end-start))
+
+        print ("Test Result: [" + result + "]")
+
         if self.verbose:
             print (results)
+
         return results
 
 
@@ -146,9 +162,8 @@ class AglaisBenchmarker(object):
         :type concurrent_users: int
         :rtype: dict
         """
-
         with Pool(processes=concurrent_users) as pool:
-            results = pool.map(self._run_single, range(concurrent_users), True)
+            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users)))
         pool.close()
         pool.join()
         return results
@@ -163,7 +178,6 @@ class AglaisBenchmarker(object):
         """
 
         results = {}
-
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
             filepath = notebook["filepath"]
