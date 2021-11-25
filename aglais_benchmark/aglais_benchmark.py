@@ -140,6 +140,10 @@ class AglaisBenchmarker(object):
         end = time.time()
         result = "SUCCESS"
         for res in results:
+            if not res:
+                result = "FAILED"
+                break
+
             for k,v in res.items():
                 if v["status"] != "SUCCESS":
                     result = v["status"]
@@ -147,7 +151,7 @@ class AglaisBenchmarker(object):
 
         if self.verbose:
             print ("Test completed! ({:.2f} seconds)".format(end-start))
-            
+ 
         print ("------------ Test Result: [" + result + "] ------------")
 
         if self.verbose:
