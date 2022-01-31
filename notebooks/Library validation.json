@@ -1,1 +1,477 @@
-﻿{"paragraphs":[{"text":"%pyspark\n\n# Check Numpy\n\nimport numpy\nassert numpy.__version__ == \"1.20.3\" ","user":"admin","dateUpdated":"2021-05-24T15:44:53+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464551_-1344349463","id":"20210521-182341_427965650","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:53+0000","dateFinished":"2021-05-24T15:44:53+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"focus":true,"$$hashKey":"object:5352"},{"text":"%pyspark\n\n# Check scipy\n\nimport scipy\nassert scipy.__version__ == \"1.6.3\" ","user":"admin","dateUpdated":"2021-05-24T15:44:53+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464553_146731958","id":"20210521-182440_1973039815","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:53+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5353"},{"text":"%pyspark\n\n# Check jupyter\n\nimport jupyter\nassert jupyter.__version__ == \"1.0.0\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464554_592323595","id":"20210521-182818_139112333","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5354"},{"text":"%pyspark\n\n# Check Cython\n\nimport Cython\nassert Cython.__version__ == \"0.29.23\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464554_228927863","id":"20210521-182914_313749778","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5355"},{"text":"%pyspark\n\n# Check pandas\n\nimport pandas\nassert pandas.__version__ == \"1.2.4\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464555_411163630","id":"20210521-182937_2119001901","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5356"},{"text":"%pyspark\n\n# Check healpy\n\nimport healpy\nassert healpy.__version__ == \"1.14.0\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464555_-1242162546","id":"20210521-183024_1374420817","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5357"},{"text":"%pyspark\n\n# Check astropy\n\nimport astropy\nassert astropy.__version__ == \"4.2.1\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464556_541568567","id":"20210521-183046_1734857709","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5358"},{"text":"%pyspark\n\n# Check astroquery\n\nimport astroquery\nassert astroquery.__version__ == \"0.4.1\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464556_1492631652","id":"20210521-183111_1316491752","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:54+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5359"},{"text":"%pyspark\n\n# Check sklearn\n\nimport sklearn\nassert sklearn.__version__ == \"0.24.2\"","user":"admin","dateUpdated":"2021-05-24T15:44:54+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464557_728219964","id":"20210521-183136_2066650261","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:54+0000","dateFinished":"2021-05-24T15:44:55+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5360"},{"text":"%pyspark\n\n# Check hdbscan\n# Can't check version as hdbscan does not have a __version__ attribute. Perhaps there is another way?\n\nimport hdbscan\n","user":"admin","dateUpdated":"2021-05-24T15:44:55+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464557_385174761","id":"20210521-183239_2125418669","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:55+0000","dateFinished":"2021-05-24T15:44:55+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5361"},{"text":"%pyspark\n\n# Check Pyvo\n\nimport pyvo\nassert pyvo.__version__ == \"1.1\"","user":"admin","dateUpdated":"2021-05-24T15:44:55+0000","config":{"editorSetting":{"language":"python","editOnDblClick":false,"completionKey":"TAB","completionSupport":true},"colWidth":12,"editorMode":"ace/mode/python","fontSize":9,"results":{},"enabled":true},"settings":{"params":{},"forms":{}},"apps":[],"jobName":"paragraph_1621870464558_1855827321","id":"20210521-183229_1632715321","dateCreated":"2021-05-24T15:34:24+0000","dateStarted":"2021-05-24T15:44:55+0000","dateFinished":"2021-05-24T15:44:55+0000","status":"FINISHED","errorMessage":"","progressUpdateIntervalMs":500,"$$hashKey":"object:5362"}],"name":"experiments/stv/Library validation","id":"2G5N1WEM6","noteParams":{},"noteForms":{},"angularObjects":{"md:shared_process":[],"spark:shared_process":[]},"config":{"isZeppelinNotebookCronEnable":false,"looknfeel":"default","personalizedMode":"false"},"info":{},"checkpoint":{"message":"Added library validation notebook"}}
+﻿{
+  "paragraphs": [
+    {
+      "text": "%pyspark\n\n# Check Numpy\n\nimport numpy\nassert numpy.__version__ == \"1.20.3\" ",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:22+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415170_1503845989",
+      "id": "20210521-182341_427965650",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:23+0000",
+      "dateFinished": "2022-01-31T16:47:49+0000",
+      "status": "FINISHED",
+      "focus": true,
+      "$$hashKey": "object:4786"
+    },
+    {
+      "text": "%pyspark\n\n# Check scipy\n\nimport scipy\nassert scipy.__version__ == \"1.6.3\" ",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:49+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415170_1337431977",
+      "id": "20210521-182440_1973039815",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:49+0000",
+      "dateFinished": "2022-01-31T16:47:49+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4787"
+    },
+    {
+      "text": "%pyspark\n\n# Check jupyter\n\nimport jupyter\nassert jupyter.__version__ == \"1.0.0\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:49+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415170_1727764882",
+      "id": "20210521-182818_139112333",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:49+0000",
+      "dateFinished": "2022-01-31T16:47:49+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4788"
+    },
+    {
+      "text": "%pyspark\n\n# Check Cython\n\nimport Cython\nassert Cython.__version__ == \"0.29.23\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:49+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415170_1404237000",
+      "id": "20210521-182914_313749778",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:49+0000",
+      "dateFinished": "2022-01-31T16:47:49+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4789"
+    },
+    {
+      "text": "%pyspark\n\n# Check pandas\n\nimport pandas\nassert pandas.__version__ == \"1.2.4\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:50+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415170_439849459",
+      "id": "20210521-182937_2119001901",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:50+0000",
+      "dateFinished": "2022-01-31T16:47:50+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4790"
+    },
+    {
+      "text": "%pyspark\n\n# Check healpy\n\nimport healpy\nassert healpy.__version__ == \"1.14.0\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:50+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "WARNING: IERSStaleWarning: leap-second file is expired. [astropy.utils.iers.iers]\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415171_360014323",
+      "id": "20210521-183024_1374420817",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:50+0000",
+      "dateFinished": "2022-01-31T16:47:51+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4791"
+    },
+    {
+      "text": "%pyspark\n\n# Check astropy\n\nimport astropy\nassert astropy.__version__ == \"4.2.1\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:51+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415171_948814237",
+      "id": "20210521-183046_1734857709",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:51+0000",
+      "dateFinished": "2022-01-31T16:47:51+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4792"
+    },
+    {
+      "text": "%pyspark\n\n# Check astroquery\n\nimport astroquery\nassert astroquery.__version__ == \"0.4.1\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:52+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415171_851238594",
+      "id": "20210521-183111_1316491752",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:52+0000",
+      "dateFinished": "2022-01-31T16:47:52+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4793"
+    },
+    {
+      "text": "%pyspark\n\n# Check sklearn\n\nimport sklearn\nassert sklearn.__version__ == \"0.24.2\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:52+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415171_1385119270",
+      "id": "20210521-183136_2066650261",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:52+0000",
+      "dateFinished": "2022-01-31T16:47:52+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4794"
+    },
+    {
+      "text": "%pyspark\n\n# Check hdbscan\n# Can't check version as hdbscan does not have a __version__ attribute. Perhaps there is another way?\n\nimport hdbscan\n",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:47:52+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415171_1236540761",
+      "id": "20210521-183239_2125418669",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:52+0000",
+      "dateFinished": "2022-01-31T16:47:52+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4795"
+    },
+    {
+      "text": "%pyspark\n\n# Check Pyvo\n\nimport pyvo\nassert pyvo.__version__ == \"1.1\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:49:49+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647415171_13188697",
+      "id": "20210521-183229_1632715321",
+      "dateCreated": "2022-01-31T16:43:35+0000",
+      "dateStarted": "2022-01-31T16:47:52+0000",
+      "dateFinished": "2022-01-31T16:47:52+0000",
+      "status": "FINISHED",
+      "$$hashKey": "object:4796"
+    },
+    {
+      "text": "%spark.pyspark\n\n# Check GaiaXPy\nimport gaiaxpy\nassert gaiaxpy.__version__ == \"0.0.6.patch\"",
+      "user": "admin",
+      "dateUpdated": "2022-01-31T16:56:32+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "ERROR",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "Fail to execute line 4: import gaiaxpy\nTraceback (most recent call last):\n  File \"/tmp/1643647668939-0/zeppelin_python.py\", line 158, in <module>\n    exec(code, _zcUserQueryNameSpace)\n  File \"<stdin>\", line 4, in <module>\nModuleNotFoundError: No module named 'gaiaxpy'\n"
+          }
+        ]
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1643647795878_527011960",
+      "id": "paragraph_1643647795878_527011960",
+      "dateCreated": "2022-01-31T16:49:55+0000",
+      "dateStarted": "2022-01-31T16:51:53+0000",
+      "dateFinished": "2022-01-31T16:51:53+0000",
+      "status": "ERROR",
+      "$$hashKey": "object:4797"
+    }
+  ],
+  "name": "libraries",
+  "id": "2GT783AD1",
+  "defaultInterpreterGroup": "spark",
+  "version": "0.10.0",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {
+    "isRunning": false
+  },
+  "path": "/tmp/libraries"
+}
