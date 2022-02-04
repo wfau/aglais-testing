@@ -26,7 +26,7 @@
            },
            {
               "name" : "Library_Validation",
-              "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/Library%20validation.json",
+              "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/Library_validation.json",
               "totaltime" : 60,
               "results" : []
            }
