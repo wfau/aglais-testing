@@ -413,49 +413,6 @@
       "dateFinished": "2022-01-31T16:47:52+0000",
       "status": "FINISHED",
       "$$hashKey": "object:4796"
-    },
-    {
-      "text": "%spark.pyspark\n\n# Check GaiaXPy\nimport gaiaxpy\nassert gaiaxpy.__version__ == \"0.0.6.patch\"",
-      "user": "admin",
-      "dateUpdated": "2022-01-31T16:56:32+0000",
-      "progress": 0,
-      "config": {
-        "editorSetting": {
-          "language": "python",
-          "editOnDblClick": false,
-          "completionKey": "TAB",
-          "completionSupport": true
-        },
-        "colWidth": 12,
-        "editorMode": "ace/mode/python",
-        "fontSize": 9,
-        "editorHide": false,
-        "results": {},
-        "enabled": true
-      },
-      "settings": {
-        "params": {},
-        "forms": {}
-      },
-      "results": {
-        "code": "ERROR",
-        "msg": [
-          {
-            "type": "TEXT",
-            "data": "Fail to execute line 4: import gaiaxpy\nTraceback (most recent call last):\n  File \"/tmp/1643647668939-0/zeppelin_python.py\", line 158, in <module>\n    exec(code, _zcUserQueryNameSpace)\n  File \"<stdin>\", line 4, in <module>\nModuleNotFoundError: No module named 'gaiaxpy'\n"
-          }
-        ]
-      },
-      "apps": [],
-      "runtimeInfos": {},
-      "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1643647795878_527011960",
-      "id": "paragraph_1643647795878_527011960",
-      "dateCreated": "2022-01-31T16:49:55+0000",
-      "dateStarted": "2022-01-31T16:51:53+0000",
-      "dateFinished": "2022-01-31T16:51:53+0000",
-      "status": "ERROR",
-      "$$hashKey": "object:4797"
     }
   ],
   "name": "libraries",
