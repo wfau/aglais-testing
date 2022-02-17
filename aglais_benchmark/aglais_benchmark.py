@@ -9,7 +9,7 @@ import logging
 from multiprocessing import Pool, current_process
 import random
 import string
-
+import hashlib
 
 class AglaisBenchmarker(object):
 
@@ -182,6 +182,7 @@ class AglaisBenchmarker(object):
         """
 
         results = {}
+
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
             filepath = notebook["filepath"]
@@ -194,14 +195,16 @@ class AglaisBenchmarker(object):
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
                 status, msg, totaltime, output = self.run_notebook(filepath, generated_name, concurrent)
+                output = hashlib.md5(str(output).encode('utf-8')).hexdigest()
+
                 if totaltime > expectedtime and status=="SUCCESS":
                     status = "SLOW"
 
-                if len(expected_output) == len(output):
-
-                    for i in range(len(output)):
-                        if output[i]!=expected_output[i]:
-                            valid = "FALSE"
+                if expected_output:
+                    if output!=expected_output:
+                        valid = "FALSE"
+                        if len(msg)==0 or not msg:
+                            msg = "Expected/Actual output missmatch"
 
                 results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
 
