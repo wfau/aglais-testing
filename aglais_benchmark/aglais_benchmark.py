@@ -134,9 +134,6 @@ class AglaisBenchmarker(object):
 
             results =  [self._run_single()]
 
-        #with open(self.result_file, 'w+') as outfile:
-        #    json.dump(results, outfile)
-
         end = time.time()
         result = "SUCCESS"
         for res in results:
@@ -151,7 +148,7 @@ class AglaisBenchmarker(object):
 
         if self.verbose:
             print ("Test completed! ({:.2f} seconds)".format(end-start))
- 
+
         print ("------------ Test Result: [" + result + "] ------------")
 
         if self.verbose:
@@ -195,16 +192,17 @@ class AglaisBenchmarker(object):
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
                 status, msg, totaltime, output = self.run_notebook(filepath, generated_name, concurrent)
-                output = hashlib.md5(str(output).encode('utf-8')).hexdigest()
 
                 if totaltime > expectedtime and status=="SUCCESS":
                     status = "SLOW"
 
-                if expected_output:
-                    if output!=expected_output:
-                        valid = "FALSE"
-                        if len(msg)==0 or not msg:
-                            msg = "Expected/Actual output missmatch"
+                if len(expected_output)>0:
+                    for i, cell in enumerate(output):
+                        md5hash = hashlib.md5(str(cell).encode('utf-8')).hexdigest()
+                        if md5hash != expected_output.get(str(i),""):
+                            valid = "FALSE"
+                            if expected_output.get(str(i),"")!="":
+                                msg += "Expected/Actual output missmatch of cell #" + str(i) + "! "
 
                 results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
 
