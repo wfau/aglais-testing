@@ -200,8 +200,8 @@ class AglaisBenchmarker(object):
                     for i, cell in enumerate(output):
                         md5hash = hashlib.md5(str(cell).encode('utf-8')).hexdigest()
                         if md5hash != expected_output.get(str(i),""):
-                            valid = "FALSE"
                             if expected_output.get(str(i),"")!="":
+                                valid = "FALSE"
                                 msg += "Expected/Actual output missmatch of cell #" + str(i) + "! "
 
                 results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
