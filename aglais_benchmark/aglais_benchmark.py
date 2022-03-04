@@ -136,6 +136,8 @@ class AglaisBenchmarker(object):
 
         end = time.time()
         result = "SUCCESS"
+        output_status = "VALID"
+
         for res in results:
             if not res:
                 result = "FAILED"
@@ -144,12 +146,15 @@ class AglaisBenchmarker(object):
             for k,v in res.items():
                 if v["status"] != "SUCCESS":
                     result = v["status"]
-                    break
+
+                if v["valid"] != "TRUE":
+                    output_status = "INVALID"
+
 
         if self.verbose:
             print ("Test completed! ({:.2f} seconds)".format(end-start))
 
-        print ("------------ Test Result: [" + result + "] ------------")
+        print ("------------ Test Completion: [" + result + "] ------------ Test Output: [" + output_status + "] ------------" )
 
         if self.verbose:
             print (results)
@@ -217,4 +222,5 @@ if __name__ == '__main__':
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
+
 
