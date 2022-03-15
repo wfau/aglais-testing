@@ -200,10 +200,11 @@ class AglaisBenchmarker(object):
             msg = ""
             percent_change = 0
             start, finish = (0,0)
+
             try:
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-                status, msg, totaltime, output, start, finish = self.run_notebook(filepath, generated_name, concurrent)
+                result, msg, totaltime, output, start, finish = self.run_notebook(filepath, generated_name, concurrent)
 
                 if totaltime > expectedtime:
                     timing_status = "SLOW"
@@ -222,6 +223,8 @@ class AglaisBenchmarker(object):
 
             except Exception as e:
                 logging.exception(e)
+                result = "FAIL"
+                output_valid = False
                 results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg }
 
         return results
