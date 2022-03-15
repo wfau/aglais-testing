@@ -10,6 +10,7 @@ from multiprocessing import Pool, current_process
 import random
 import string
 import hashlib
+from datetime import datetime
 
 class AglaisBenchmarker(object):
 
@@ -50,7 +51,9 @@ class AglaisBenchmarker(object):
         """
 
         start = time.time()
-        status = "ERROR"
+        starttime_iso = datetime.now()
+
+        status = "FAIL"
         msg = ""
         tmpfile = "/tmp/" + name + ".json"
         output = []
@@ -107,10 +110,17 @@ class AglaisBenchmarker(object):
             #os.remove(tmpfile)
 
         except Exception as e:
-            status = "ERROR"
+            status = "FAIL"
             logging.exception(e)
+
+        if status == "FAILED":
+            status = "FAIL"
+        if status == "SUCCESS":
+            status = "PASS"
+
         end = time.time()
-        return (status, msg, end-start, output)
+        endtime_iso = datetime.now()
+        return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
 
 
     def run(self, concurrent=False, users=1):
@@ -135,26 +145,21 @@ class AglaisBenchmarker(object):
             results =  [self._run_single()]
 
         end = time.time()
-        result = "SUCCESS"
-        output_status = "VALID"
-
+        result = "PASS"
         for res in results:
             if not res:
-                result = "FAILED"
+                result = "FAIL"
                 break
 
             for k,v in res.items():
-                if v["status"] != "SUCCESS":
-                    result = v["status"]
-
-                if v["valid"] != "TRUE":
-                    output_status = "INVALID"
-
+                if v["result"] != "PASS":
+                    result = v["result"]
+                    break
 
         if self.verbose:
             print ("Test completed! ({:.2f} seconds)".format(end-start))
 
-        print ("------------ Test Completion: [" + result + "] ------------ Test Output: [" + output_status + "] ------------" )
+        print ("------------ Test Result: [" + result + "] ------------")
 
         if self.verbose:
             print (results)
@@ -184,36 +189,40 @@ class AglaisBenchmarker(object):
         """
 
         results = {}
-
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
             filepath = notebook["filepath"]
             name = notebook["name"]
             expected_output = notebook["results"]
-            valid = "TRUE"
+            result = "PASS"
+            output_valid = True
+            timing_status = "FAST"
             msg = ""
-
+            percent_change = 0
+            start, finish = (0,0)
             try:
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-                status, msg, totaltime, output = self.run_notebook(filepath, generated_name, concurrent)
+                status, msg, totaltime, output, start, finish = self.run_notebook(filepath, generated_name, concurrent)
 
-                if totaltime > expectedtime and status=="SUCCESS":
-                    status = "SLOW"
+                if totaltime > expectedtime:
+                    timing_status = "SLOW"
 
                 if len(expected_output)>0:
                     for i, cell in enumerate(output):
                         md5hash = hashlib.md5(str(cell).encode('utf-8')).hexdigest()
                         if md5hash != expected_output.get(str(i),""):
                             if expected_output.get(str(i),"")!="":
-                                valid = "FALSE"
+                                output_valid = False
+                                result = "FAIL"
                                 msg += "Expected/Actual output missmatch of cell #" + str(i) + "! "
 
-                results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
+                percent_change = "{:.2f}".format(((totaltime - expectedtime)/expectedtime)*100)
+                results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg}
 
             except Exception as e:
                 logging.exception(e)
-                results[name] = {"totaltime" : "{:.2f}".format(totaltime), "status" : status, "msg" : msg, "valid" : valid }
+                results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg }
 
         return results
 
@@ -222,5 +231,4 @@ if __name__ == '__main__':
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
-
 
