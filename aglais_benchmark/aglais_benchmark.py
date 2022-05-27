@@ -25,11 +25,19 @@ class AglaisBenchmarker(object):
         return d
 
 
-    def __init__(self, notebook_config=None, zeppelin_configdir="/", verbose=True):
+    def __init__(self, notebook_config=None, users="/tmp/user_list.yml", config_dir="/tmp/",  zeppelin_url="", verbose=True):
         self.verbose = verbose
-        self.configdir = zeppelin_configdir
-        #self.result_file = "output.json"
+        user_file = open(users)
+        self.zeppelin_url = zeppelin_url
+        self.users_file = users
+        self.config_dir = config_dir
         self.notebooks = []
+
+        try:
+            self.generate_zdairi_user_configs()
+        except Exception as e:
+            logging.exception(e)
+
         try:
             if notebook_config:
                 if notebook_config.startswith("http"):
@@ -39,6 +47,28 @@ class AglaisBenchmarker(object):
                         self.notebooks = json.load(f)["notebooks"]
         except Exception as e:
             logging.exception(e)
+
+
+    def generate_zdairi_user_configs(self):
+        counter = 0
+        postfix = ""
+        print(self.users_file)
+        user_file = open(self.users_file)
+        user_dictionary = json.load(user_file)
+        user_file.close()
+        user_list = user_dictionary.get("users",[])
+
+        for user in user_list:
+            shiro_user = user.get("shirouser", {})
+            if shiro_user:
+                f = open(self.config_dir + "user" +  postfix + ".yml", "w")
+                f.write("zeppelin_url: " + self.zeppelin_url +  "\n")
+                f.write("zeppelin_auth: true\n")
+                f.write("zeppelin_user: "  + shiro_user.get("name") + "\n")
+                f.write("zeppelin_password: " + shiro_user.get("pass") + "\n")
+                f.close()
+                counter += 1
+                postfix = str(counter)
 
 
     def run_notebook(self, filepath, name, concurrent=False):
@@ -63,9 +93,9 @@ class AglaisBenchmarker(object):
             if concurrent:
                 p = current_process()
                 counter = p._identity[0]
-                config = self.configdir + "user" + str(counter) + ".yml"
+                config = self.config_dir + "user" + str(counter) + ".yml"
             else :
-                config = self.configdir + "user.yml"
+                config = self.config_dir + "user.yml"
 
 
             data = self.getNote(filepath)
@@ -77,7 +107,8 @@ class AglaisBenchmarker(object):
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = pipe.communicate()[0]
-
+            print (result)
+            
             result = result.decode().split("\n")
             text = result[0]
             notebookid = text.split(": ")[1]
