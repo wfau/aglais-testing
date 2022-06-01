@@ -52,7 +52,6 @@ class AglaisBenchmarker(object):
     def generate_zdairi_user_configs(self):
         counter = 0
         postfix = ""
-        print(self.users_file)
         user_file = open(self.users_file)
         user_dictionary = json.load(user_file)
         user_file.close()
@@ -107,8 +106,6 @@ class AglaisBenchmarker(object):
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = pipe.communicate()[0]
-            print (result)
-            
             result = result.decode().split("\n")
             text = result[0]
             notebookid = text.split(": ")[1]
@@ -154,7 +151,7 @@ class AglaisBenchmarker(object):
         return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
 
 
-    def run(self, concurrent=False, users=1):
+    def run(self, concurrent=False, users=1, delay_start=0, delay_notebook=0):
         """
         Wrapper method to run a notebook test, either as a concurrent benchmark or as a single one
         :type concurrent: bool
@@ -168,12 +165,12 @@ class AglaisBenchmarker(object):
         if concurrent:
             if self.verbose:
                 print ("Test started [Multi User]")
-            results = self._run_parallel(users)
+            results = self._run_parallel(users, delay_start, delay_notebook)
         else:
             if self.verbose:
                 print ("Test started [Single User]")
 
-            results =  [self._run_single()]
+            results =  [self._run_single(0, False, delay_start, delay_notebook)]
 
         end = time.time()
         result = "PASS"
@@ -198,20 +195,20 @@ class AglaisBenchmarker(object):
         return results
 
 
-    def _run_parallel(self, concurrent_users):
+    def _run_parallel(self, concurrent_users=True, delay_start=0, delay_notebook=0):
         """
         Run the benchmarks in the given configuration as a parallel test with multiple concurrent users
         :type concurrent_users: int
         :rtype: dict
         """
         with Pool(processes=concurrent_users) as pool:
-            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users)))
+            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users, [delay_start]*concurrent_users, [delay_notebook]*concurrent_users)))
         pool.close()
         pool.join()
         return results
 
 
-    def _run_single(self, iterable=0, concurrent=False):
+    def _run_single(self, iterable=0, concurrent=False, delay_start=0, delay_notebook=0):
         """
         Run a single instance of the benchmark test
         :type iterable: int
@@ -220,6 +217,8 @@ class AglaisBenchmarker(object):
         """
 
         results = {}
+        time.sleep(delay_start * iterable )
+
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
             filepath = notebook["filepath"]
@@ -258,6 +257,7 @@ class AglaisBenchmarker(object):
                 output_valid = False
                 results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg }
 
+            time.sleep(delay_notebook)
         return results
 
 
@@ -265,4 +265,5 @@ if __name__ == '__main__':
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
+
 
