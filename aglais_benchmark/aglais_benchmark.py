@@ -101,7 +101,20 @@ class AglaisBenchmarker(object):
             data["name"] = tmpfile
             with open(tmpfile, 'w+') as cred:
                 json.dump(data, cred)
+        except Exception as e:
+            logging.exception(e)
 
+        try:
+            # Make notebook
+            batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
+            pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            result = pipe.communicate()[0]
+            result = result.decode().split("\n")
+            text = result[0]
+            notebookid = text.split(": ")[1]
+        except Exception as e:
+            # Try again
+            # Temorary fix
             # Make notebook
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
@@ -110,6 +123,7 @@ class AglaisBenchmarker(object):
             text = result[0]
             notebookid = text.split(": ")[1]
 
+        try:
             # Run notebook
             batcmd="zdairi --config " + config + " notebook run --notebook " + notebookid
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
