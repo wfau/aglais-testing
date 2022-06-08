@@ -87,6 +87,7 @@ class AglaisBenchmarker(object):
         tmpfile = "/tmp/" + name + ".json"
         output = []
         notebookid = None
+        result = ""
 
         try:
 
@@ -139,8 +140,8 @@ class AglaisBenchmarker(object):
             # Print notebook
             batcmd="zdairi --config " + config + " notebook print --notebook " + notebookid
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0]
-            result = result.decode().split("\n")
+            zdairi_output = pipe.communicate()[0]
+            result = zdairi_output.decode().split("\n")
             json_notebook = json.loads("".join(result), strict=False)
 
             for cell in json_notebook["paragraphs"]:
@@ -160,7 +161,7 @@ class AglaisBenchmarker(object):
 
         except Exception as e:
             status = "FAIL"
-            logging.exception(e)
+            print ("Exception encountered while running/printing the notebook:" + zdairi_output)
 
         if status == "FAILED":
             status = "FAIL"
