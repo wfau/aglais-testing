@@ -70,7 +70,7 @@ class AglaisBenchmarker(object):
                 postfix = str(counter)
 
 
-    def run_notebook(self, filepath, name, concurrent=False):
+    def run_notebook(self, filepath, name, concurrent=False, delete=True):
         """
         Run a Zeppelin notebook, given a path and name for it. Return the status of the job and how long it took to execute
         :type filepath: str
@@ -145,11 +145,11 @@ class AglaisBenchmarker(object):
                         if status=="ERROR":
                             msg = result_msg
                             break
-
-            # Delete notebook
-            #batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
-            #pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            #os.remove(tmpfile)
+            if delete:
+                # Delete notebook
+                batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
+                pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                os.remove(tmpfile)
 
         except Exception as e:
             status = "FAIL"
@@ -165,7 +165,7 @@ class AglaisBenchmarker(object):
         return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
 
 
-    def run(self, concurrent=False, users=1, delay_start=0, delay_notebook=0):
+    def run(self, concurrent=False, users=1, delay_start=0, delay_notebook=0, delete=True):
         """
         Wrapper method to run a notebook test, either as a concurrent benchmark or as a single one
         :type concurrent: bool
@@ -179,12 +179,12 @@ class AglaisBenchmarker(object):
         if concurrent:
             if self.verbose:
                 print ("Test started [Multi User]")
-            results = self._run_parallel(users, delay_start, delay_notebook)
+            results = self._run_parallel(users, delay_start, delay_notebook, delete)
         else:
             if self.verbose:
                 print ("Test started [Single User]")
 
-            results =  [self._run_single(0, False, delay_start, delay_notebook)]
+            results =  [self._run_single(0, False, delay_start, delay_notebook, delete)]
 
         end = time.time()
         result = "PASS"
@@ -209,20 +209,20 @@ class AglaisBenchmarker(object):
         return results
 
 
-    def _run_parallel(self, concurrent_users=True, delay_start=0, delay_notebook=0):
+    def _run_parallel(self, concurrent_users=True, delay_start=0, delay_notebook=0, delete=True):
         """
         Run the benchmarks in the given configuration as a parallel test with multiple concurrent users
         :type concurrent_users: int
         :rtype: dict
         """
         with Pool(processes=concurrent_users) as pool:
-            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users, [delay_start]*concurrent_users, [delay_notebook]*concurrent_users)))
+            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users, [delay_start]*concurrent_users, [delay_notebook]*concurrent_users, [delete]*concurrent_users)))
         pool.close()
         pool.join()
         return results
 
 
-    def _run_single(self, iterable=0, concurrent=False, delay_start=0, delay_notebook=0):
+    def _run_single(self, iterable=0, concurrent=False, delay_start=0, delay_notebook=0, delete=True):
         """
         Run a single instance of the benchmark test
         :type iterable: int
@@ -279,5 +279,8 @@ if __name__ == '__main__':
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
+
+
+
 
 
