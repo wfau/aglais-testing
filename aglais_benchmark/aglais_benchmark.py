@@ -86,6 +86,7 @@ class AglaisBenchmarker(object):
         msg = ""
         tmpfile = "/tmp/" + name + ".json"
         output = []
+        notebookid = None
 
         try:
 
@@ -113,15 +114,21 @@ class AglaisBenchmarker(object):
             text = result[0]
             notebookid = text.split(": ")[1]
         except Exception as e:
-            # Try again
-            # Temorary fix
-            # Make notebook
-            batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
-            pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0]
-            result = result.decode().split("\n")
-            text = result[0]
-            notebookid = text.split(": ")[1]
+            print ("Exception encountered while trying to create a notebook: " + result)
+
+        # Temporary fix.. If notebook failed to create, try once more
+        if not notebookid:
+            try:
+                # Make notebook
+                batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
+                pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                result = pipe.communicate()[0]
+                result = result.decode().split("\n")
+                text = result[0]
+                notebookid = text.split(": ")[1]
+            except Exception as e:
+                print ("Exception encountered while trying to create a notebook: " + result)
+
 
         try:
             # Run notebook
