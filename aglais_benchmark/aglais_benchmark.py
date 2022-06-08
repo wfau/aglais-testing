@@ -256,7 +256,7 @@ class AglaisBenchmarker(object):
             try:
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-                result, msg, totaltime, output, start, finish = self.run_notebook(filepath, generated_name, concurrent)
+                result, msg, totaltime, output, start, finish = self.run_notebook(filepath, generated_name, concurrent, delete)
 
                 if totaltime > expectedtime:
                     timing_status = "SLOW"
