@@ -28,7 +28,7 @@ class AglaisBenchmarker(object):
     def __init__(self, notebook_config=None, users="/tmp/user_list.yml", config_dir="/tmp/",  zeppelin_url="", verbose=True):
         self.verbose = verbose
         user_file = open(users)
-        self.zeppelin_url = zeppelin_url
+        self.zeppelin_url = zeppelin_url.strip("/")
         self.users_file = users
         self.config_dir = config_dir
         self.notebooks = []
@@ -70,7 +70,13 @@ class AglaisBenchmarker(object):
                 postfix = str(counter)
 
 
-    def run_notebook(self, filepath, name, concurrent=False):
+    def delete_notebook(self, notebookid, config):
+        # Delete notebook
+        batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
+        pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+    def run_notebook(self, filepath, name, concurrent=False, delete=True):
         """
         Run a Zeppelin notebook, given a path and name for it. Return the status of the job and how long it took to execute
         :type filepath: str
@@ -86,6 +92,8 @@ class AglaisBenchmarker(object):
         msg = ""
         tmpfile = "/tmp/" + name + ".json"
         output = []
+        notebookid = None
+        result = ""
 
         try:
 
@@ -108,20 +116,29 @@ class AglaisBenchmarker(object):
             # Make notebook
             batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0]
-            result = result.decode().split("\n")
+            zdairi_result = pipe.communicate()[0]
+            result = zdairi_result.decode().split("\n")
             text = result[0]
             notebookid = text.split(": ")[1]
         except Exception as e:
-            # Try again
-            # Temorary fix
-            # Make notebook
-            batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
-            pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0]
-            result = result.decode().split("\n")
-            text = result[0]
-            notebookid = text.split(": ")[1]
+            print ("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config)
+            print (zdairi_result.decode())
+
+        # Temporary fix.. If notebook failed to create, try once more
+        if not notebookid:
+            try:
+                # Make notebook
+                batcmd="zdairi --config " + config + " notebook create --filepath " + tmpfile
+                pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                zdairi_result = pipe.communicate()[0]
+                result = zdairi_result.decode().split("\n")
+                text = result[0]
+                notebookid = text.split(": ")[1]
+            except Exception as e:
+                print ("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config) 
+                print (zdairi_result.decode())
+
+
 
         try:
             # Run notebook
@@ -132,8 +149,8 @@ class AglaisBenchmarker(object):
             # Print notebook
             batcmd="zdairi --config " + config + " notebook print --notebook " + notebookid
             pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = pipe.communicate()[0]
-            result = result.decode().split("\n")
+            zdairi_output = pipe.communicate()[0]
+            result = zdairi_output.decode().split("\n")
             json_notebook = json.loads("".join(result), strict=False)
 
             for cell in json_notebook["paragraphs"]:
@@ -145,15 +162,10 @@ class AglaisBenchmarker(object):
                         if status=="ERROR":
                             msg = result_msg
                             break
-
-            # Delete notebook
-            #batcmd="zdairi --config " + config + " notebook delete --notebook " + notebookid
-            #pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            #os.remove(tmpfile)
-
         except Exception as e:
             status = "FAIL"
-            logging.exception(e)
+            print ("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config) 
+            print (zdairi_output.decode())
 
         if status == "FAILED":
             status = "FAIL"
@@ -162,10 +174,10 @@ class AglaisBenchmarker(object):
 
         end = time.time()
         endtime_iso = datetime.now()
-        return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
+        return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), notebookid, config)
 
 
-    def run(self, concurrent=False, users=1, delay_start=0, delay_notebook=0):
+    def run(self, concurrent=False, users=1, delay_start=0, delay_notebook=0, delete=True):
         """
         Wrapper method to run a notebook test, either as a concurrent benchmark or as a single one
         :type concurrent: bool
@@ -179,12 +191,12 @@ class AglaisBenchmarker(object):
         if concurrent:
             if self.verbose:
                 print ("Test started [Multi User]")
-            results = self._run_parallel(users, delay_start, delay_notebook)
+            results = self._run_parallel(users, delay_start, delay_notebook, delete)
         else:
             if self.verbose:
                 print ("Test started [Single User]")
 
-            results =  [self._run_single(0, False, delay_start, delay_notebook)]
+            results =  [self._run_single(0, False, delay_start, delay_notebook, delete)]
 
         end = time.time()
         result = "PASS"
@@ -209,20 +221,20 @@ class AglaisBenchmarker(object):
         return results
 
 
-    def _run_parallel(self, concurrent_users=True, delay_start=0, delay_notebook=0):
+    def _run_parallel(self, concurrent_users=True, delay_start=0, delay_notebook=0, delete=True):
         """
         Run the benchmarks in the given configuration as a parallel test with multiple concurrent users
         :type concurrent_users: int
         :rtype: dict
         """
         with Pool(processes=concurrent_users) as pool:
-            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users, [delay_start]*concurrent_users, [delay_notebook]*concurrent_users)))
+            results = pool.starmap(self._run_single, list(zip(range(concurrent_users), [True]*concurrent_users, [delay_start]*concurrent_users, [delay_notebook]*concurrent_users, [delete]*concurrent_users)))
         pool.close()
         pool.join()
         return results
 
 
-    def _run_single(self, iterable=0, concurrent=False, delay_start=0, delay_notebook=0):
+    def _run_single(self, iterable=0, concurrent=False, delay_start=0, delay_notebook=0, delete=True):
         """
         Run a single instance of the benchmark test
         :type iterable: int
@@ -232,6 +244,8 @@ class AglaisBenchmarker(object):
 
         results = {}
         time.sleep(delay_start * iterable )
+        created_notebooks = []
+        totaltime = 0
 
         for notebook in self.notebooks:
             expectedtime = notebook["totaltime"]
@@ -248,7 +262,8 @@ class AglaisBenchmarker(object):
             try:
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-                result, msg, totaltime, output, start, finish = self.run_notebook(filepath, generated_name, concurrent)
+                result, msg, totaltime, output, start, finish, notebookid, user_config = self.run_notebook(filepath, generated_name, concurrent, delete)
+                created_notebooks.append([notebookid, user_config])
 
                 if totaltime > expectedtime:
                     timing_status = "SLOW"
@@ -272,6 +287,10 @@ class AglaisBenchmarker(object):
                 results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg }
 
             time.sleep(delay_notebook)
+
+        if delete:
+            for notebook in created_notebooks:
+                self.delete_notebook(notebook[0], notebook[1])
         return results
 
 
@@ -279,5 +298,3 @@ if __name__ == '__main__':
 
     # Multi-user concurrent benchmark
     AglaisBenchmarker("../config/notebooks/notebooks_quick_pi.json", "../config/zeppelin/").run(concurrent=True, users=3)
-
-
