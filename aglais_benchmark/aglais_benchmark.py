@@ -213,10 +213,9 @@ class AglaisBenchmarker(object):
         if self.verbose:
             print ("Test completed! ({:.2f} seconds)".format(end-start))
 
-        print ("------------ Test Result: [" + result + "] ------------")
+        # print ("------------ Test Result: [" + result + "] ------------")
 
-        if self.verbose:
-            print (results)
+        print (json.dumps(results))
 
         return results
 
