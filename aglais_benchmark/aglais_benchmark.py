@@ -94,6 +94,7 @@ class AglaisBenchmarker(object):
         output = []
         notebookid = None
         result = ""
+        messages = []
 
         try:
 
@@ -121,8 +122,8 @@ class AglaisBenchmarker(object):
             text = result[0]
             notebookid = text.split(": ")[1]
         except Exception as e:
-            print ("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config)
-            print (zdairi_result.decode())
+            messages.append("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config)
+            messages.append(zdairi_result.decode())
 
         # Temporary fix.. If notebook failed to create, try once more
         if not notebookid:
@@ -135,8 +136,8 @@ class AglaisBenchmarker(object):
                 text = result[0]
                 notebookid = text.split(": ")[1]
             except Exception as e:
-                print ("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config) 
-                print (zdairi_result.decode())
+                messages.append("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config) 
+                messages.append(zdairi_result.decode())
 
 
 
@@ -164,8 +165,8 @@ class AglaisBenchmarker(object):
                             break
         except Exception as e:
             status = "FAIL"
-            print ("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config) 
-            print (zdairi_output.decode())
+            messages.append("Exception encountered while trying to create a notebook: " + tmpfile  + " for user in config: " + config) 
+            messages.append(zdairi_output.decode())
 
         if status == "FAILED":
             status = "FAIL"
@@ -174,7 +175,7 @@ class AglaisBenchmarker(object):
 
         end = time.time()
         endtime_iso = datetime.now()
-        return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), notebookid, config)
+        return (status, msg, end-start, output, starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'), notebookid, config, messages)
 
 
     def run(self, concurrent=False, users=1, delay_start=0, delay_notebook=0, delete=True):
@@ -196,19 +197,9 @@ class AglaisBenchmarker(object):
             if self.verbose:
                 print ("Test started [Single User]")
 
-            results =  [self._run_single(0, False, delay_start, delay_notebook, delete)]
+            results =  self._run_single(0, False, delay_start, delay_notebook, delete)
 
         end = time.time()
-        result = "PASS"
-        for res in results:
-            if not res:
-                result = "FAIL"
-                break
-
-            for k,v in res.items():
-                if v["result"] != "PASS":
-                    result = v["result"]
-                    break
 
         if self.verbose:
             print ("Test completed! ({:.2f} seconds)".format(end-start))
@@ -241,7 +232,7 @@ class AglaisBenchmarker(object):
         :rtype: dict
         """
 
-        results = {}
+        results = []
         time.sleep(delay_start * iterable )
         created_notebooks = []
         totaltime = 0
@@ -257,11 +248,12 @@ class AglaisBenchmarker(object):
             msg = ""
             percent_change = 0
             start, finish = (0,0)
+            messages = []
 
             try:
 
                 generated_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-                result, msg, totaltime, output, start, finish, notebookid, user_config = self.run_notebook(filepath, generated_name, concurrent, delete)
+                result, msg, totaltime, output, start, finish, notebookid, user_config, messages = self.run_notebook(filepath, generated_name, concurrent, delete)
                 created_notebooks.append([notebookid, user_config])
 
                 if totaltime > expectedtime:
@@ -277,13 +269,13 @@ class AglaisBenchmarker(object):
                                 msg += "Expected/Actual output missmatch of cell #" + str(i) + "! "
 
                 percent_change = "{:.2f}".format(((totaltime - expectedtime)/expectedtime)*100)
-                results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg}
+                results.append({"name" : name, "result" : result, "outputs" : {"valid" : output_valid}, "messages" : messages, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg})
 
             except Exception as e:
                 logging.exception(e)
                 result = "FAIL"
                 output_valid = False
-                results[name] = {"result" : result, "outputs" : {"valid" : output_valid}, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg }
+                results.append({"name" : name, "result" : result, "outputs" : {"valid" : output_valid}, "messages" : messages, "time" : {"result" : timing_status, "elapsed" : "{:.2f}".format(totaltime), "expected" : "{:.2f}".format(expectedtime), "percent" : percent_change, "start" : start, "finish": finish  }, "logs" : msg })
 
             time.sleep(delay_notebook)
 
