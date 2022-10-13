@@ -1,7 +1,7 @@
 ﻿{
   "paragraphs": [
     {
-      "text": "%spark.pyspark\nimport gaiadmpsetup\nactual_tables = [i.name for i in spark.catalog.listTables()]\nexpected_tables = ['gaia_source', 'gaia_source_allwise_best_neighbours', 'gaia_source_ps1_best_neighbours', 'gaia_source_tmasspsc_best_neighbours']\nassert all(item in actual_tables for item in expected_tables)\n",
+      "text": "%spark.pyspark\nimport gaiadmpsetup\nactual_tables = [i.name for i in spark.catalog.listTables()]\nexpected_tables = ['astrophysical_parameters', 'astrophysical_parameters_supp', 'gaia_source', 'rvs_mean_spectrum', 'xp_continuous_mean_spectrum', 'xp_sampled_mean_spectrum', 'xp_summary']\nassert all(item in actual_tables for item in expected_tables)\n",
       "user": "gaiauser",
       "dateUpdated": "2022-03-25T15:24:14+0000",
       "progress": 0,
