@@ -1,7 +1,7 @@
 ﻿{
   "paragraphs": [
     {
-      "text": "%pyspark\n\n# Check Numpy\n\nimport numpy\nassert numpy.__version__ == \"1.20.3\" ",
+      "text": "%pyspark\n\n# Check Numpy\n\nimport numpy\nassert numpy.__version__ == \"1.21.0\" ",
       "user": "gaiauser",
       "dateUpdated": "2022-03-16T18:34:45+0000",
       "progress": 0,

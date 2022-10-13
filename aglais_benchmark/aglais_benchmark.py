@@ -64,7 +64,7 @@ class AglaisBenchmarker(object):
                 f.write("zeppelin_url: " + self.zeppelin_url +  "\n")
                 f.write("zeppelin_auth: true\n")
                 f.write("zeppelin_user: "  + shiro_user.get("name") + "\n")
-                f.write("zeppelin_password: " + shiro_user.get("pass") + "\n")
+                f.write("zeppelin_password: " + shiro_user.get("password") + "\n")
                 f.close()
                 counter += 1
                 postfix = str(counter)
