@@ -190,21 +190,11 @@ class AglaisBenchmarker(object):
 
         results = []
         if concurrent:
-            if self.verbose:
-                print ("Test started [Multi User]")
             results = self._run_parallel(users, delay_start, delay_notebook, delete)
         else:
-            if self.verbose:
-                print ("Test started [Single User]")
-
             results =  self._run_single(0, False, delay_start, delay_notebook, delete)
 
         end = time.time()
-
-        if self.verbose:
-            print ("Test completed! ({:.2f} seconds)".format(end-start))
-
-        # print ("------------ Test Result: [" + result + "] ------------")
 
         print (json.dumps(results))
 
