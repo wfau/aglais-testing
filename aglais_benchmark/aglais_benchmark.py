@@ -25,7 +25,7 @@ class AglaisBenchmarker(object):
         return d
 
 
-    def __init__(self, notebook_config=None, users="/tmp/user_list.yml", config_dir="/tmp/",  zeppelin_url="", verbose=True):
+    def __init__(self, notebook_config=None, users="/tmp/user_list.yml", config_dir="/tmp/",  zeppelin_url="", verbose=False):
         self.verbose = verbose
         user_file = open(users)
         self.zeppelin_url = zeppelin_url.strip("/")
