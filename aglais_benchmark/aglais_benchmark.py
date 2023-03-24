@@ -248,6 +248,8 @@ class AglaisBenchmarker(object):
 
                 if totaltime > expectedtime:
                     timing_status = "SLOW"
+                elif totaltime < (expectedtime / 2):
+                    timing_status = "ERROR"
 
                 if len(expected_output)>0:
                     for i, cell in enumerate(output):
