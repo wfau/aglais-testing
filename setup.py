@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name = "aglais_benchmark",
-    version = "0.1.1",
+    version = "0.2.6",
     author = "Stelios Voutsinas",
     author_email = "stv@roe.ac.uk",
     description = ("A testing suite for Aglais"),
