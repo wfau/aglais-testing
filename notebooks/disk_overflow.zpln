@@ -1,0 +1,52 @@
+﻿{
+  "paragraphs": [
+    {
+      "text": "%pyspark\n# Set the size of the generated data (adjust as needed)\n# Set the size of the DataFrame (adjust as needed)\nnum_rows = 100000000000  # 1 billion rows\n\n# Generate a DataFrame with a large number of rows\ndf = spark.range(num_rows).selectExpr(\"CAST(id AS STRING) AS value\")\n\n# Perform some transformations on the DataFrame (optional)\n# df = df.withColumn(\"new_value\", df[\"value\"] * 2)\n\n# Write the DataFrame to temporary storage\ndf.persist()\n\ndf.count()\n",
+      "user": "Reyesfan",
+      "dateUpdated": "2023-05-23T17:13:58+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1684851405678_916106654",
+      "id": "paragraph_1684851405678_916106654",
+      "dateCreated": "2023-05-23T14:16:45+0000",
+      "dateStarted": "2023-05-23T17:13:58+0000",
+      "dateFinished": "2023-05-23T17:13:58+0000",
+      "status": "ERROR",
+      "focus": true,
+      "$$hashKey": "object:605"
+    }
+  ],
+  "name": "test",
+  "id": "2J1K9ASN4",
+  "defaultInterpreterGroup": "spark",
+  "version": "0.10.1-gaia-dmp-0.1",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {},
+  "path": "/test"
+}
