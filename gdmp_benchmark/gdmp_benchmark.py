@@ -452,7 +452,7 @@ class GDMPBenchmarker:
             messages.append(
                 "Exception encountered while trying to create a notebook: "
                 + filepath + " for user in config: " + config)
-            messages.append(output.decode())
+            messages.append(output)
 
         return output, msg, status
 
