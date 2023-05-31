@@ -5,16 +5,18 @@ GDMPBenchmarker is a class used to run benchmarks for the Gaia Data Mining platf
 ## Installation
 
 ### Requirements Installation
+
 To use the GDMPBenchmarker, first install the requirements:
 
         pip install -r pip-requirements
         
-### Installing GDMPBenchmarker 
+###  GDMPBenchmarker Install
 
 Optionally, you can install the GDMPBenchmarker:
         
         python3 setup.py install
-Or you can use it by just running the gdmp_benchmark
+        
+Or you can use it by just running the gdmp_benchmark.py module
 
 ## Usage
 
@@ -26,8 +28,9 @@ To use the GDMPBenchmarker class, follow these steps:
 
 2. Create an instance of the GDMPBenchmarker class, providing the necessary parameters:
 
-        benchmarker = GDMPBenchmarker(userconfig="user_config.json", zeppelin_url="http://localhost:8080")
-      
+        benchmarker = GDMPBenchmarker(userconfig="user_config.json", zeppelin_url="http://localhost:8080"
+
+
         Parameters:
         -----------
         userconfig (optional): Path to the user configuration file in JSON format. If not provided, a default configuration will be used.
@@ -36,6 +39,7 @@ To use the GDMPBenchmarker class, follow these steps:
 3. Run the benchmark:
 
         results = benchmarker.run(usercount=1, notebook_config="notebook_config.json", delay_start=0, delay_notebook=0)
+
 
         Parameters:
         -----------
