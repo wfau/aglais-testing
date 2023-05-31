@@ -9,16 +9,16 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "aglais_benchmark",
-    version = "0.2.6",
+    name = "gdmp_benchmark",
+    version = "0.2.7",
     author = "Stelios Voutsinas",
     author_email = "stv@roe.ac.uk",
-    description = ("A testing suite for Aglais"),
+    description = ("A testing suite for the Gaia Data Mining Platform"),
     license = "BSD",
-    keywords = "aglais_benchmark",
+    keywords = "gdmp_benchmark",
     url = "https://github.com/wfau/aglais-testing",
     include_package_data = True,
-    packages=['aglais_benchmark'],
+    packages=['gdmp_benchmark'],
     long_description="README",
     long_description_content_type='text/markdown',
     classifiers=[
@@ -28,7 +28,8 @@ setup(
     ],
     install_requires=[
         'zdairi @ git+https://github.com/stvoutsin/zdairi',
-        'simplejson'
+        'simplejson',
+        'requests'
     ]
 )
 
