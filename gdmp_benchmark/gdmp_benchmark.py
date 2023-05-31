@@ -58,11 +58,11 @@ def validate_positive(val):
          TypeError: If value is not an int
     """
     if not isinstance(val, int):
-        msg = "Value is not an int: {0}".format(val)
+        msg = f"Value is not an int: {val}"
         raise TypeError(msg)
 
     if val < 0:
-        msg = "Value is not positive: {0}".format(val)
+        msg = f"Value is not positive: {val}"
         raise ValueError(msg)
 
 
@@ -78,7 +78,7 @@ def validate(instance):
     for fld in fields(instance):
         attr = getattr(instance, fld.name)
         if not isinstance(attr, fld.type):
-            msg = "Field {0.name} is of type {1}, should be {0.type}".format(fld, type(attr))
+            msg = f"Field {fld.name} is of type {type(attr)}, should be {fld.type}"
             raise TypeError(msg)
 
 
@@ -131,14 +131,14 @@ class Timing:
 
         """
         if self.expected and self.totaltime > 0:
-            return "{:.2f}".format(((self.totaltime - self.expected) / self.expected) * 100)
+            return f"{((self.totaltime - self.expected) / self.expected) * 100:.2f}"
 
         return "0"
 
     def __str__(self):
         return str({
             "result": self.result,
-            "elapsed": "{:.2f}".format(self.totaltime),
+            "elapsed": f"{self.totaltime:.2f}",
             "percent": self.percent_change,
             "start": self.start,
             "finish": self.finish
@@ -147,7 +147,7 @@ class Timing:
     def __repr__(self):
         return str({
             "result": self.result,
-            "elapsed": "{:.2f}".format(self.totaltime),
+            "elapsed": f"{self.totaltime:.2f}",
             "percent": self.percent_change,
             "start": self.start,
             "finish": self.finish
@@ -289,7 +289,7 @@ class GDMPBenchmarker:
         :type urlpath: str
         :rtype: dict
         """
-        response = requests.get(urlpath).text
+        response = requests.get(urlpath, timeout=30).text
         data = json.loads(response, strict=False)
         return data
 
@@ -313,16 +313,16 @@ class GDMPBenchmarker:
         if not self.userconfig:
             return 0
         try:
-            with open(self.userconfig) as user_file:
+            with open(self.userconfig, encoding="utf-8") as user_file:
                 user_dictionary = json.load(user_file)
-        except JSONDecodeError:
-            raise InvalidConfigurationError("User configuration is not a valid json file!")
+        except JSONDecodeError as exc:
+            raise InvalidConfigurationError("User configuration is not a valid json file!") from exc
 
         user_list = user_dictionary.get("users", [])
         for user in user_list:
             shiro_user = user.get("shirouser", {})
             if shiro_user:
-                with open(self.DEFAULT_DIR + "user" + str(counter) + ".yml", "w") as user_file:
+                with open(self.DEFAULT_DIR + "user" + str(counter) + ".yml", "w", encoding="utf-8") as user_file:
                     user_file.write("zeppelin_url: " + self.zeppelin_url + "\n")
                     user_file.write("zeppelin_auth: true\n")
                     user_file.write("zeppelin_user: " + shiro_user.get("name") + "\n")
@@ -381,6 +381,27 @@ class GDMPBenchmarker:
         return notebookid
 
     @staticmethod
+    def _print_notebook(notebookid: str, config: str) -> dict:
+        """
+        Print notebook
+
+        Args:
+            notebookid: ID of the notebook
+            config: User configuration file
+
+        Returns:
+            dict: JSON dictionary of notebook
+            str: Output from cells
+        """
+        batcmd = "zdairi --config " + config + " notebook print --notebook " + notebookid
+        pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=True)
+        zdairi_output = pipe.communicate()[0]
+        json_notebook = json.loads("".join(zdairi_output.decode()
+                                           .split("\n")), strict=False)
+        return json_notebook, zdairi_output
+
+    @staticmethod
     def _run_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
         """
         Run a notebook
@@ -407,25 +428,20 @@ class GDMPBenchmarker:
                                   stderr=subprocess.STDOUT, shell=True) as pipe:
                 _ = pipe.communicate()[0].decode()
 
-                # Print notebook
-                batcmd = "zdairi --config " + config + " notebook print --notebook " + notebookid
-                pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT, shell=True)
-                zdairi_output = pipe.communicate()[0]
-                json_notebook = json.loads("".join(zdairi_output.decode()
-                                                   .split("\n")), strict=False)
+            json_notebook, output = GDMPBenchmarker._print_notebook(notebookid=notebookid, config=config)
 
-                for cell in json_notebook["paragraphs"]:
-                    if len(cell.get("results", [])) > 0:
-                        status = Status[cell["results"]["code"].upper()]
-                        if cell["results"]["code"] == Status.SUCCESS.value:
-                            status = Status.SUCCESS
-                        elif len(cell["results"].get("msg")) > 0:
-                            result_msg = cell["results"]["msg"][0]["data"].strip()
-                            output.append(result_msg)
-                            if status == "ERROR":
-                                msg = result_msg
-                                break
+            for cell in json_notebook["paragraphs"]:
+                if len(cell.get("results", [])) > 0:
+                    status = Status[cell["results"]["code"].upper()]
+                    if cell["results"]["code"] == Status.SUCCESS.value:
+                        status = Status.SUCCESS
+                    elif len(cell["results"].get("msg")) > 0:
+                        result_msg = cell["results"]["msg"][0]["data"].strip()
+                        output.append(result_msg)
+                        if status == "ERROR":
+                            msg = result_msg
+                            break
+
         except JSONDecodeError as json_err:
             logging.exception(json_err)
             status = Status.FAIL
@@ -468,7 +484,7 @@ class GDMPBenchmarker:
             None
         """
         data["name"] = filepath
-        with open(filepath, 'w+') as cred:
+        with open(filepath, 'w+', encoding="utf-8") as cred:
             json.dump(data, cred)
 
     def run_notebook(self, filepath: str, name: str,
@@ -548,7 +564,7 @@ class GDMPBenchmarker:
                 if note_config.startswith("http"):
                     notebook_list = self.get_note(urlpath=note_config)["notebooks"]
                 else:
-                    with open(note_config) as config_file:
+                    with open(note_config, encoding="utf-8") as config_file:
                         notebook_json = json.load(config_file)["notebooks"]
                         for notebook in notebook_json:
                             notebook_list.append(Notebook(**notebook))
@@ -752,24 +768,17 @@ def main(args: List[str] = None):
 
     print("{")
     print(
-        """
-    \"config\": {{
-        \"endpoint\":   \"{}\",
-        \"testconfig\": \"{}\",
-        \"userconfig\":   \"{}\",
-        \"usercount\":  \"{}\",
-        \"delaystart\":  \"{}\",
-        \"delaynotebook\":  \"{}\"
+        f"""
+        "config": {{
+            "endpoint":   "{zeppelin_url}",
+            "testconfig": "{notebook_config}",
+            "userconfig":   "{user_config}",
+            "usercount":  "{usercount}",
+            "delaystart":  "{delay_start}",
+            "delaynotebook":  "{delay_notebook}"
         }},
-    \"output\":
-    """.format(
-        zeppelin_url,
-        notebook_config,
-        user_config,
-        usercount,
-        delay_start,
-        delay_notebook,
-        )
+        "output":
+        """
     )
 
     print("---start---")
