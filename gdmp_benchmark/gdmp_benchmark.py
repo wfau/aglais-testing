@@ -264,7 +264,12 @@ class Results:
             "logs": self.logs
             }, indent=4)
 
-    def to_json(self):
+    def to_json(self) -> str:
+        """
+        Convert to JSON
+        Returns:
+            str
+        """
         return json.dumps({
             "name": self.name,
             "result": self.result,
@@ -315,6 +320,7 @@ class NotebookHandler(Protocol):
         Returns:
             str:
         """
+        # pylint: disable=W0107
         pass
 
     @staticmethod
@@ -333,6 +339,7 @@ class NotebookHandler(Protocol):
             msg: Result message
             status: Status message
         """
+        # pylint: disable=W0107
         pass
 
     @staticmethod
@@ -347,6 +354,7 @@ class NotebookHandler(Protocol):
         Returns:
             dict: JSON dictionary of notebook
         """
+        # pylint: disable=W0107
         pass
 
     @staticmethod
@@ -361,6 +369,7 @@ class NotebookHandler(Protocol):
         Returns:
             None
         """
+        # pylint: disable=W0107
         pass
 
 
