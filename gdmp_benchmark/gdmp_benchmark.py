@@ -322,7 +322,8 @@ class GDMPBenchmarker:
         for user in user_list:
             shiro_user = user.get("shirouser", {})
             if shiro_user:
-                with open(self.DEFAULT_DIR + "user" + str(counter) + ".yml", "w", encoding="utf-8") as user_file:
+                with open(self.DEFAULT_DIR + "user" + str(counter) + ".yml", "w",
+                          encoding="utf-8") as user_file:
                     user_file.write("zeppelin_url: " + self.zeppelin_url + "\n")
                     user_file.write("zeppelin_auth: true\n")
                     user_file.write("zeppelin_user: " + shiro_user.get("name") + "\n")
@@ -381,7 +382,7 @@ class GDMPBenchmarker:
         return notebookid
 
     @staticmethod
-    def _print_notebook(notebookid: str, config: str) -> dict:
+    def _print_notebook(notebookid: str, config: str) -> tuple:
         """
         Print notebook
 
@@ -390,15 +391,17 @@ class GDMPBenchmarker:
             config: User configuration file
 
         Returns:
-            dict: JSON dictionary of notebook
-            str: Output from cells
+            tuple (dict, str):
+                dict: JSON dictionary of notebook
+                str: Output from cells
         """
         batcmd = "zdairi --config " + config + " notebook print --notebook " + notebookid
-        pipe = subprocess.Popen(batcmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, shell=True)
-        zdairi_output = pipe.communicate()[0]
-        json_notebook = json.loads("".join(zdairi_output.decode()
-                                           .split("\n")), strict=False)
+        with subprocess.Popen(
+                batcmd, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, shell=True) as pipe:
+            zdairi_output = pipe.communicate()[0]
+            json_notebook = json.loads("".join(zdairi_output.decode()
+                                               .split("\n")), strict=False)
         return json_notebook, zdairi_output
 
     @staticmethod
@@ -420,7 +423,7 @@ class GDMPBenchmarker:
 
         output = []
         msg = ""
-
+        status = ""
         try:
             # Run notebook
             batcmd = "zdairi --config " + config + " notebook run --notebook " + notebookid
@@ -428,7 +431,8 @@ class GDMPBenchmarker:
                                   stderr=subprocess.STDOUT, shell=True) as pipe:
                 _ = pipe.communicate()[0].decode()
 
-            json_notebook, output = GDMPBenchmarker._print_notebook(notebookid=notebookid, config=config)
+            json_notebook, output = GDMPBenchmarker._print_notebook(
+                notebookid=notebookid, config=config)
 
             for cell in json_notebook["paragraphs"]:
                 if len(cell.get("results", [])) > 0:
@@ -448,7 +452,7 @@ class GDMPBenchmarker:
             messages.append(
                 "Exception encountered while trying to create a notebook: "
                 + filepath + " for user in config: " + config)
-            messages.append(zdairi_output.decode())
+            messages.append(output.decode())
 
         return output, msg, status
 
@@ -464,7 +468,7 @@ class GDMPBenchmarker:
 
         if concurrent:
             cur_process = current_process()
-            #pylint: disable=protected-access
+            # pylint: disable=protected-access
             counter = cur_process._identity[0]
             config = self.DEFAULT_DIR + "user" + str(counter) + ".yml"
         else:
@@ -630,6 +634,7 @@ class GDMPBenchmarker:
         """
         out_valid = True
         result_status_msg = Status.PASS
+        output_msg = ""
 
         if actual != expected:
             if expected != "":
@@ -663,7 +668,6 @@ class GDMPBenchmarker:
 
         for notebook in notebooks:
             output_valid = True
-            result = None
             generated_name = ''.join(random.choice(
                 string.ascii_uppercase + string.digits) for _ in range(10))
             result = self.run_notebook(notebook.filepath, generated_name, concurrent)  # Results
