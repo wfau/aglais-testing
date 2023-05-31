@@ -245,14 +245,14 @@ class Results:
         }
 
     def __str__(self):
-        return json.dumps({
+        return str({
             "name": self.name,
             "result": self.result,
             "outputs": self.outputs,
             "messages": self.messages,
-            "time": self.time.to_json(),
+            "time": self.time,
             "logs": self.logs
-            }, indent=4)
+            })
 
     def __repr__(self):
         return json.dumps({
@@ -261,6 +261,16 @@ class Results:
             "outputs": self.outputs,
             "messages": self.messages,
             "time": self.time.to_json(),
+            "logs": self.logs
+            }, indent=4)
+
+    def to_json(self):
+        return json.dumps({
+            "name": self.name,
+            "result": self.result,
+            "outputs": self.outputs,
+            "messages": self.messages,
+            "time": self.time,
             "logs": self.logs
             }, indent=4)
 
@@ -305,7 +315,7 @@ class NotebookHandler(Protocol):
         Returns:
             str:
         """
-        ...
+        pass
 
     @staticmethod
     def execute_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
@@ -323,7 +333,7 @@ class NotebookHandler(Protocol):
             msg: Result message
             status: Status message
         """
-        ...
+        pass
 
     @staticmethod
     def print_notebook(notebookid: str, config: str) -> dict:
@@ -337,7 +347,7 @@ class NotebookHandler(Protocol):
         Returns:
             dict: JSON dictionary of notebook
         """
-        ...
+        pass
 
     @staticmethod
     def delete_notebook(notebookid: str, config: str) -> None:
@@ -351,7 +361,7 @@ class NotebookHandler(Protocol):
         Returns:
             None
         """
-        ...
+        pass
 
 
 class ZDairiNotebookHandler:
