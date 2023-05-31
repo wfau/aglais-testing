@@ -16,8 +16,9 @@ import argparse
 import logging
 from datetime import datetime
 from multiprocessing import Pool, current_process
-from typing import List, Dict
+from typing import List, Dict, Protocol
 from dataclasses import dataclass, field, fields
+from pprint import pprint
 import simplejson as json
 from simplejson.errors import JSONDecodeError
 import requests
@@ -99,6 +100,14 @@ class Status(Enum):
     def __repr__(self):
         return self.value
 
+    def to_json(self):
+        """
+        Format as json
+        Returns:
+            str
+        """
+        return self.value
+
 
 @dataclass
 class Timing:
@@ -132,7 +141,6 @@ class Timing:
         """
         if self.expected and self.totaltime > 0:
             return f"{((self.totaltime - self.expected) / self.expected) * 100:.2f}"
-
         return "0"
 
     def __str__(self):
@@ -152,6 +160,20 @@ class Timing:
             "start": self.start,
             "finish": self.finish
             })
+
+    def to_json(self):
+        """
+        Format as json
+        Returns:
+            dict
+        """
+        return {
+            "result": self.result.to_json(),
+            "elapsed": f"{self.totaltime:.2f}",
+            "percent": self.percent_change,
+            "start": self.start,
+            "finish": self.finish
+        }
 
     def to_dict(self):
         """
@@ -223,24 +245,24 @@ class Results:
         }
 
     def __str__(self):
-        return str({
+        return json.dumps({
             "name": self.name,
             "result": self.result,
             "outputs": self.outputs,
             "messages": self.messages,
-            "time": self.time,
+            "time": self.time.to_json(),
             "logs": self.logs
-            })
+            }, indent=4)
 
     def __repr__(self):
-        return str({
+        return json.dumps({
             "name": self.name,
-            "result": self.result,
+            "result": self.result.to_json(),
             "outputs": self.outputs,
             "messages": self.messages,
-            "time": self.time,
+            "time": self.time.to_json(),
             "logs": self.logs
-            })
+            }, indent=4)
 
 
 @dataclass
@@ -267,6 +289,201 @@ class Notebook:
         self.expectedtime = self.totaltime
 
 
+class NotebookHandler(Protocol):
+    """
+    Protocol for a Notebook handling Class
+    """
+    @staticmethod
+    def create_notebook(config: str, filepath: str, messages: list) -> str:
+        """
+        Create a Notebook
+        Args:
+            config:
+            filepath:
+            messages:
+
+        Returns:
+            str:
+        """
+        ...
+
+    @staticmethod
+    def execute_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
+        """
+        Execute a notebook
+
+        Args:
+            config (str): The configuration for the user
+            notebookid (str): The notebook ID
+            filepath (str): The path for the notebook to create
+            messages (list): The list of messages to append to
+
+        Returns:
+            output: A list of output, each element being a single cell output
+            msg: Result message
+            status: Status message
+        """
+        ...
+
+    @staticmethod
+    def print_notebook(notebookid: str, config: str) -> dict:
+        """
+        Print notebook
+
+        Args:
+            notebookid: ID of the notebook
+            config: User configuration file
+
+        Returns:
+            dict: JSON dictionary of notebook
+        """
+        ...
+
+    @staticmethod
+    def delete_notebook(notebookid: str, config: str) -> None:
+        """
+        Delete notebook
+
+        Args:
+            notebookid (str): The ID of the notebook to delete
+            config (str): The configuration for the user
+
+        Returns:
+            None
+        """
+        ...
+
+
+class ZDairiNotebookHandler:
+    """
+    Implementation of the Notebook Handler Protocol
+    Provides methods for creating, executing, printing
+        and deleting notebooks
+    """
+    @staticmethod
+    def delete_notebook(notebookid: str, config: str) -> None:
+        """
+        Delete notebook
+
+        Args:
+            notebookid (str): The ID of the notebook to delete
+            config (str): The configuration for the user
+
+        Returns:
+            None
+        """
+
+        batcmd = "zdairi --config " + config + " notebook delete --notebook " + notebookid
+        with subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True):
+            pass
+
+    @staticmethod
+    def create_notebook(config: str, filepath: str, messages: list) -> str:
+        """
+        Create a notebook
+
+        Args:
+            config (str): The configuration for the user
+            filepath (str): The path for the notebook to create
+            messages (list): The list of messages to append to
+
+        Returns:
+            notebookid: The ID for the new notebook
+        """
+
+        try:
+            # Make notebook
+            batcmd = "zdairi --config " + config + " notebook create --filepath " + filepath
+            with subprocess.Popen(batcmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, shell=True) as pipe:
+                zdairi_result = pipe.communicate()[0]
+                result = zdairi_result.decode().split("\n")
+                text = result[0]
+                notebookid = text.split(": ")[1]
+
+        except JSONDecodeError as json_err:
+            logging.exception(json_err)
+            messages.append(
+                "Exception encountered while trying to create a notebook: "
+                + filepath + " for user in config: " + config)
+            messages.append(zdairi_result.decode())
+
+        return notebookid
+
+    @staticmethod
+    def print_notebook(notebookid: str, config: str) -> dict:
+        """
+        Print notebook
+
+        Args:
+            notebookid: ID of the notebook
+            config: User configuration file
+
+        Returns:
+            dict: JSON dictionary of notebook
+        """
+        batcmd = "zdairi --config " + config + " notebook print --notebook " + notebookid
+        with subprocess.Popen(
+                batcmd, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, shell=True) as pipe:
+            zdairi_output = pipe.communicate()[0]
+            json_notebook = json.loads("".join(zdairi_output.decode()
+                                               .split("\n")), strict=False)
+        return json_notebook
+
+    @staticmethod
+    def execute_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
+        """
+        Execute a notebook
+
+        Args:
+            config (str): The configuration for the user
+            notebookid (str): The notebook ID
+            filepath (str): The path for the notebook to create
+            messages (list): The list of messages to append to
+
+        Returns:
+            output: A list of output, each element being a single cell output
+            msg: Result message
+            status: Status message
+        """
+
+        output = []
+        msg = ""
+        status = ""
+        try:
+            # Run notebook
+            batcmd = "zdairi --config " + config + " notebook run --notebook " + notebookid
+            with subprocess.Popen(batcmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, shell=True) as pipe:
+                _ = pipe.communicate()[0].decode()
+
+            json_notebook = ZDairiNotebookHandler.print_notebook(
+                notebookid=notebookid, config=config)
+
+            for cell in json_notebook["paragraphs"]:
+                if len(cell.get("results", [])) > 0:
+                    status = Status[cell["results"]["code"].upper()]
+                    if cell["results"]["code"] == Status.SUCCESS.value:
+                        status = Status.SUCCESS
+                    elif len(cell["results"].get("msg")) > 0:
+                        result_msg = cell["results"]["msg"][0]["data"].strip()
+                        output.append(result_msg)
+                        if status == "ERROR":
+                            msg = result_msg
+                            break
+
+        except JSONDecodeError as json_err:
+            logging.exception(json_err)
+            status = Status.FAIL
+            messages.append(
+                "Exception encountered while trying to create a notebook: "
+                + filepath + " for user in config: " + config)
+            messages.append(output)
+
+        return output, msg, status
+
+
 class GDMPBenchmarker:
     """
     Class used to run benchmarks for the Gaia Data Mining platform
@@ -274,13 +491,17 @@ class GDMPBenchmarker:
     DEFAULT_DIR = "/tmp/"
     DEFAULT_USER_CONFIG = "user1.yml"
 
-    def __init__(self, userconfig: str = "", zeppelin_url: str = "", verbose: bool = False):
+    def __init__(self, userconfig: str = "", zeppelin_url: str = "",
+                 verbose: bool = False,
+                 notebook_handler: NotebookHandler = ZDairiNotebookHandler):
+
         self.verbose = verbose
         self.zeppelin_url = zeppelin_url.strip("/")
         self.userconfig = userconfig
         self.notebooks = []
         self.default_userconfig = self.DEFAULT_USER_CONFIG
         self.total_users = self.generate_zdairi_user_configs()
+        self.notebook_handler = notebook_handler
 
     @staticmethod
     def get_note(urlpath: str) -> Dict[str, str]:
@@ -331,130 +552,6 @@ class GDMPBenchmarker:
                 counter += 1
 
         return len(user_list)
-
-    @staticmethod
-    def _delete_notebook(notebookid: str, config: str) -> None:
-        """
-        Delete notebook
-
-        Args:
-            notebookid (str): The ID of the notebook to delete
-            config (str): The configuration for the user
-
-        Returns:
-            None
-        """
-
-        batcmd = "zdairi --config " + config + " notebook delete --notebook " + notebookid
-        with subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True):
-            pass
-
-    @staticmethod
-    def _create_notebook(config: str, filepath: str, messages: list) -> str:
-        """
-        Create a notebook
-
-        Args:
-            config (str): The configuration for the user
-            filepath (str): The path for the notebook to create
-            messages (list): The list of messages to append to
-
-        Returns:
-            notebookid: The ID for the new notebook
-        """
-
-        try:
-            # Make notebook
-            batcmd = "zdairi --config " + config + " notebook create --filepath " + filepath
-            with subprocess.Popen(batcmd, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, shell=True) as pipe:
-                zdairi_result = pipe.communicate()[0]
-                result = zdairi_result.decode().split("\n")
-                text = result[0]
-                notebookid = text.split(": ")[1]
-        except JSONDecodeError as json_err:
-            logging.exception(json_err)
-            messages.append(
-                "Exception encountered while trying to create a notebook: "
-                + filepath + " for user in config: " + config)
-            messages.append(zdairi_result.decode())
-
-        return notebookid
-
-    @staticmethod
-    def _print_notebook(notebookid: str, config: str) -> tuple:
-        """
-        Print notebook
-
-        Args:
-            notebookid: ID of the notebook
-            config: User configuration file
-
-        Returns:
-            tuple (dict, str):
-                dict: JSON dictionary of notebook
-                str: Output from cells
-        """
-        batcmd = "zdairi --config " + config + " notebook print --notebook " + notebookid
-        with subprocess.Popen(
-                batcmd, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, shell=True) as pipe:
-            zdairi_output = pipe.communicate()[0]
-            json_notebook = json.loads("".join(zdairi_output.decode()
-                                               .split("\n")), strict=False)
-        return json_notebook, zdairi_output
-
-    @staticmethod
-    def _run_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
-        """
-        Run a notebook
-
-        Args:
-            config (str): The configuration for the user
-            notebookid (str): The notebook ID
-            filepath (str): The path for the notebook to create
-            messages (list): The list of messages to append to
-
-        Returns:
-            output: A list of output, each element being a single cell output
-            msg: Result message
-            status: Status message
-        """
-
-        output = []
-        msg = ""
-        status = ""
-        try:
-            # Run notebook
-            batcmd = "zdairi --config " + config + " notebook run --notebook " + notebookid
-            with subprocess.Popen(batcmd, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, shell=True) as pipe:
-                _ = pipe.communicate()[0].decode()
-
-            json_notebook, output = GDMPBenchmarker._print_notebook(
-                notebookid=notebookid, config=config)
-
-            for cell in json_notebook["paragraphs"]:
-                if len(cell.get("results", [])) > 0:
-                    status = Status[cell["results"]["code"].upper()]
-                    if cell["results"]["code"] == Status.SUCCESS.value:
-                        status = Status.SUCCESS
-                    elif len(cell["results"].get("msg")) > 0:
-                        result_msg = cell["results"]["msg"][0]["data"].strip()
-                        output.append(result_msg)
-                        if status == "ERROR":
-                            msg = result_msg
-                            break
-
-        except JSONDecodeError as json_err:
-            logging.exception(json_err)
-            status = Status.FAIL
-            messages.append(
-                "Exception encountered while trying to create a notebook: "
-                + filepath + " for user in config: " + config)
-            messages.append(output)
-
-        return output, msg, status
 
     def _get_user_config(self, concurrent: bool) -> str:
         """
@@ -516,11 +613,11 @@ class GDMPBenchmarker:
         self._write_data_to_file(data=data, filepath=tmpfile)
 
         # Create Notebook
-        notebookid = self._create_notebook(config=config,
-                                           filepath=tmpfile, messages=messages)
+        notebookid = self.notebook_handler.create_notebook(config=config,
+                                                           filepath=tmpfile, messages=messages)
 
         # Run Notebook
-        output, msg, status = self._run_notebook(
+        output, msg, status = self.notebook_handler.execute_notebook(
             config=config, notebookid=notebookid, filepath=tmpfile, messages=messages)
 
         end = time.time()
@@ -702,7 +799,7 @@ class GDMPBenchmarker:
 
         if delete:
             for notebook in created_notebooks:
-                self._delete_notebook(notebookid=notebook[0], config=notebook[1])
+                self.notebook_handler.delete_notebook(notebookid=notebook[0], config=notebook[1])
 
         return results
 
@@ -784,6 +881,7 @@ def main(args: List[str] = None):
         "output":
         """
     )
+    print("}")
 
     print("---start---")
     results = GDMPBenchmarker(
@@ -797,9 +895,8 @@ def main(args: List[str] = None):
         delay_notebook=delay_notebook,
     )
 
-    print(results)
+    pprint(results)
     print("---end---")
-    print("}")
 
 
 if __name__ == '__main__':
