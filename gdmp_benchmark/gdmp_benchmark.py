@@ -523,14 +523,18 @@ class GDMPBenchmarker:
         self.notebook_handler = notebook_handler
 
     @staticmethod
-    def get_note(urlpath: str) -> Dict[str, str]:
+    def get_note(path: str) -> Dict[str, str]:
         """
-        Get the json file given a URL, and return as a json object
-        :type urlpath: str
+        Get the json file given a path (URL or file), and return as a json object
+        :type path: str
         :rtype: dict
         """
-        response = requests.get(urlpath, timeout=30).text
-        data = json.loads(response, strict=False)
+        if path.startswith("http"):
+            res = requests.get(path, timeout=30).text
+            data = json.loads(res, strict=False)
+        else:
+            with open(path, encoding="utf-8") as config_file:
+                data = json.load(config_file)
         return data
 
     def generate_zdairi_user_configs(self) -> int:
@@ -628,7 +632,7 @@ class GDMPBenchmarker:
         starttime_iso = datetime.now()
 
         config = self._get_user_config(concurrent)
-        data = self.get_note(urlpath=filepath)
+        data = self.get_note(path=filepath)
         self._write_data_to_file(data=data, filepath=tmpfile)
 
         # Create Notebook
@@ -680,14 +684,9 @@ class GDMPBenchmarker:
                 list: Notebook list
             """
             notebook_list = []
-            if note_config:
-                if note_config.startswith("http"):
-                    notebook_list = self.get_note(urlpath=note_config)["notebooks"]
-                else:
-                    with open(note_config, encoding="utf-8") as config_file:
-                        notebook_json = json.load(config_file)["notebooks"]
-                        for notebook in notebook_json:
-                            notebook_list.append(Notebook(**notebook))
+            notebook_json = self.get_note(path=note_config)["notebooks"]
+            for notebook in notebook_json:
+                notebook_list.append(Notebook(**notebook))
             return notebook_list
 
         notebooks = parse_notebook_config(notebook_config)
@@ -789,7 +788,7 @@ class GDMPBenchmarker:
             result = self.run_notebook(notebook.filepath, generated_name, concurrent)  # Results
             created_notebooks.append([result.notebookid, result.user_config])
 
-            if len(notebook.expected_output) > 0:
+            if len(notebook.expected_output) > 0 and result.result!=Status.ERROR:
                 for i, cell in enumerate(result.output):
                     actual_output = hashlib.md5(str(cell).encode('utf-8')).hexdigest()
                     expected_output = notebook.expected_output.get(str(i), "")
@@ -897,7 +896,6 @@ def main(args: List[str] = None):
             "delaystart":  "{delay_start}",
             "delaynotebook":  "{delay_notebook}"
         }},
-        "output":
         """
     )
     print("}")
