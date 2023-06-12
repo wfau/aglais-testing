@@ -28,7 +28,7 @@ To use the GDMPBenchmarker class, follow these steps:
 
 2. Create an instance of the GDMPBenchmarker class, providing the necessary parameters:
 
-        benchmarker = GDMPBenchmarker(userconfig="user_config.json", zeppelin_url="http://localhost:8080"
+        benchmarker = GDMPBenchmarker(userconfig="user_config.json", zeppelin_url="http://localhost:8080")
 
 
         Parameters:
