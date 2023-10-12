@@ -1,0 +1,11 @@
+{
+"notebooks" : [
+           {
+              "name" : "pi_quick",
+              "filepath" : "https://raw.githubusercontent.com/wfau/aglais-testing/main/notebooks/pi_fail.json",
+              "totaltime" : 10,
+              "results" :  [ "3.141210"]
+           }
+
+]
+}
