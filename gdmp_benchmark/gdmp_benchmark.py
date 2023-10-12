@@ -230,7 +230,7 @@ class Results:
                 "outputs": self.outputs,
                 "messages": self.messages,
                 "time": self.time,
-                "logs": self.logs,
+                "logs": self.msg,
             }
         )
 
@@ -240,9 +240,9 @@ class Results:
                 "name": self.name,
                 "result": str(self.result),
                 "outputs": self.outputs,
-                "messages": self.messages,
+                "messages": self.msg,
                 "time": self.time,
-                "logs": self.logs,
+                "logs": self.msg,
             }
         )
 
