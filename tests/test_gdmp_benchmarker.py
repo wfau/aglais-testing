@@ -3,7 +3,6 @@ from gdmp_benchmark import GDMPBenchmarker, Results, Timing, Notebook, Status
 import unittest.mock as mock
 
 """
-Main functionalities:
 The GDMPBenchmarker class is responsible for benchmarking Zeppelin notebooks. It allows users to run notebooks and compare their output against expected output. The class can run notebooks in parallel, and it can delete the notebooks after they have been run. The class also generates user configurations for Zeppelin, and it can validate the configuration passed in by the user.
 
 Methods:

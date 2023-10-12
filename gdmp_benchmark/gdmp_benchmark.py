@@ -28,6 +28,7 @@ class InvalidConfigurationError(Exception):
     """
     Exception to be raised when the configuration passed in is invalid
     """
+
     __module__ = Exception.__module__
 
     def __init__(self, message):
@@ -83,10 +84,11 @@ def validate(instance):
             raise TypeError(msg)
 
 
-class Status(Enum):
+class Status(str, Enum):
     """
     Status of the timing for a notebook run
     """
+
     SLOW = "SLOW"
     FAST = "FAST"
     PASS = "PASS"
@@ -121,6 +123,7 @@ class Timing:
         finish (str): The end time of the notebook run
         expected (str): The expected execution time
     """
+
     result: Status
     totaltime: int
     start: str
@@ -144,22 +147,26 @@ class Timing:
         return "0"
 
     def __str__(self):
-        return str({
-            "result": self.result,
-            "elapsed": f"{self.totaltime:.2f}",
-            "percent": self.percent_change,
-            "start": self.start,
-            "finish": self.finish
-            })
+        return str(
+            {
+                "result": self.result,
+                "elapsed": f"{self.totaltime:.2f}",
+                "percent": self.percent_change,
+                "start": self.start,
+                "finish": self.finish,
+            }
+        )
 
     def __repr__(self):
-        return str({
-            "result": self.result,
-            "elapsed": f"{self.totaltime:.2f}",
-            "percent": self.percent_change,
-            "start": self.start,
-            "finish": self.finish
-            })
+        return str(
+            {
+                "result": self.result,
+                "elapsed": f"{self.totaltime:.2f}",
+                "percent": self.percent_change,
+                "start": self.start,
+                "finish": self.finish,
+            }
+        )
 
     def to_json(self):
         """
@@ -168,11 +175,11 @@ class Timing:
             dict
         """
         return {
-            "result": self.result.to_json(),
+            "result": self.result,
             "elapsed": f"{self.totaltime:.2f}",
             "percent": self.percent_change,
             "start": self.start,
-            "finish": self.finish
+            "finish": self.finish,
         }
 
     def to_dict(self):
@@ -205,7 +212,7 @@ class Results:
         outputs (dict): Additional outputs.
         name (str): A name attribute.
     """
-    #
+
     result: Status
     msg: str
     output: list
@@ -241,28 +248,33 @@ class Results:
             "logs": self.logs,
             "time": self.time.__dict__,
             "outputs": self.outputs,
-            "name": self.name
+            "name": self.name,
         }
 
     def __str__(self):
-        return str({
-            "name": self.name,
-            "result": self.result,
-            "outputs": self.outputs,
-            "messages": self.messages,
-            "time": self.time,
-            "logs": self.logs
-            })
+        return str(
+            {
+                "name": self.name,
+                "result": str(self.result),
+                "outputs": self.outputs,
+                "messages": self.messages,
+                "time": self.time,
+                "logs": self.logs,
+            }
+        )
 
     def __repr__(self):
-        return json.dumps({
-            "name": self.name,
-            "result": self.result.to_json(),
-            "outputs": self.outputs,
-            "messages": self.messages,
-            "time": self.time.to_json(),
-            "logs": self.logs
-            }, indent=4)
+        return json.dumps(
+            {
+                "name": self.name,
+                "result": str(self.result),
+                "outputs": self.outputs,
+                "messages": self.messages,
+                "time": self.time.to_json(),
+                "logs": self.logs,
+            },
+            indent=4,
+        )
 
     def to_json(self) -> str:
         """
@@ -270,14 +282,76 @@ class Results:
         Returns:
             str
         """
-        return json.dumps({
-            "name": self.name,
-            "result": self.result,
-            "outputs": self.outputs,
-            "messages": self.messages,
-            "time": self.time,
-            "logs": self.logs
-            }, indent=4)
+
+        return json.dumps(
+            {
+                "name": self.name,
+                "result": str(self.result),
+                "outputs": self.outputs,
+                "messages": self.messages,
+                "time": self.time,
+                "logs": self.logs,
+            },
+            indent=4,
+        )
+
+
+class Alertable(Protocol):
+    def send_alert(self, message: Results, only_on_error: bool = True) -> None:
+        ...
+
+
+class AlertStrategies(Enum):
+    ONLY_ON_ERROR = "ONLY_ON_ERROR"
+    SLOW_AND_ERROR = "SLOW_AND_ERROR"
+    ALLWAYS = "ALLWAYS"
+
+
+ALERT_STRATEGIES_MAP = {
+    AlertStrategies.ONLY_ON_ERROR: (Status.ERROR, Status.FAIL),
+    AlertStrategies.SLOW_AND_ERROR: (Status.ERROR, Status.FAIL, Status.SLOW),
+    AlertStrategies.ALLWAYS: (
+        Status.ERROR,
+        Status.FAIL,
+        Status.SLOW,
+        Status.FAST,
+        Status.PASS,
+    ),
+}
+
+
+class SlackAlerter:
+    def __init__(self, webhook):
+        self.webhook = webhook
+
+    @staticmethod
+    def send_http(msg: str, url: str):
+        # Send the HTTP POST request to the webhook URL
+        response = requests.post(
+            url, json={"text": msg}, headers={"Content-Type": "application/json"}
+        )
+
+        # Check the response status
+        if response.status_code == 200:
+            logging.info("Message sent successfully to Slack!")
+        else:
+            logging.warning(
+                f"Failed to send message. Status code: {response.status_code}"
+            )
+
+    def send_alert(
+        self, content: list, alert_strategy: AlertStrategies.SLOW_AND_ERROR
+    ) -> None:
+        for test in content:
+            if test.result in ALERT_STRATEGIES_MAP.get(
+                alert_strategy, True
+            ) or test.time.result in ALERT_STRATEGIES_MAP.get(alert_strategy, True):
+                self.send_http(self.format_message(test), self.webhook)
+                return
+
+    @staticmethod
+    def format_message(content: Results) -> str:
+        return json.dumps(content, default=str)
 
 
 @dataclass
@@ -291,6 +365,7 @@ class Notebook:
          totaltime (int): The totaltime of the notebook
          results (list):  The results of the notebook
     """
+
     name: str
     filepath: str
     totaltime: int
@@ -308,6 +383,7 @@ class NotebookHandler(Protocol):
     """
     Protocol for a Notebook handling Class
     """
+
     @staticmethod
     def create_notebook(config: str, filepath: str, messages: list) -> str:
         """
@@ -324,7 +400,9 @@ class NotebookHandler(Protocol):
         pass
 
     @staticmethod
-    def execute_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
+    def execute_notebook(
+        config: str, notebookid: str, filepath: str, messages: list
+    ) -> tuple:
         """
         Execute a notebook
 
@@ -379,6 +457,7 @@ class ZDairiNotebookHandler:
     Provides methods for creating, executing, printing
         and deleting notebooks
     """
+
     @staticmethod
     def delete_notebook(notebookid: str, config: str) -> None:
         """
@@ -392,8 +471,12 @@ class ZDairiNotebookHandler:
             None
         """
 
-        batcmd = "zdairi --config " + config + " notebook delete --notebook " + notebookid
-        with subprocess.Popen(batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True):
+        batcmd = (
+            "zdairi --config " + config + " notebook delete --notebook " + notebookid
+        )
+        with subprocess.Popen(
+            batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
+        ):
             pass
 
     @staticmethod
@@ -412,9 +495,12 @@ class ZDairiNotebookHandler:
 
         try:
             # Make notebook
-            batcmd = "zdairi --config " + config + " notebook create --filepath " + filepath
-            with subprocess.Popen(batcmd, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, shell=True) as pipe:
+            batcmd = (
+                "zdairi --config " + config + " notebook create --filepath " + filepath
+            )
+            with subprocess.Popen(
+                batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
+            ) as pipe:
                 zdairi_result = pipe.communicate()[0]
                 result = zdairi_result.decode().split("\n")
                 text = result[0]
@@ -424,7 +510,10 @@ class ZDairiNotebookHandler:
             logging.exception(json_err)
             messages.append(
                 "Exception encountered while trying to create a notebook: "
-                + filepath + " for user in config: " + config)
+                + filepath
+                + " for user in config: "
+                + config
+            )
             messages.append(zdairi_result.decode())
 
         return notebookid
@@ -441,17 +530,22 @@ class ZDairiNotebookHandler:
         Returns:
             dict: JSON dictionary of notebook
         """
-        batcmd = "zdairi --config " + config + " notebook print --notebook " + notebookid
+        batcmd = (
+            "zdairi --config " + config + " notebook print --notebook " + notebookid
+        )
         with subprocess.Popen(
-                batcmd, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, shell=True) as pipe:
+            batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
+        ) as pipe:
             zdairi_output = pipe.communicate()[0]
-            json_notebook = json.loads("".join(zdairi_output.decode()
-                                               .split("\n")), strict=False)
+            json_notebook = json.loads(
+                "".join(zdairi_output.decode().split("\n")), strict=False
+            )
         return json_notebook
 
     @staticmethod
-    def execute_notebook(config: str, notebookid: str, filepath: str, messages: list) -> tuple:
+    def execute_notebook(
+        config: str, notebookid: str, filepath: str, messages: list
+    ) -> tuple:
         """
         Execute a notebook
 
@@ -472,13 +566,17 @@ class ZDairiNotebookHandler:
         status = ""
         try:
             # Run notebook
-            batcmd = "zdairi --config " + config + " notebook run --notebook " + notebookid
-            with subprocess.Popen(batcmd, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT, shell=True) as pipe:
+            batcmd = (
+                "zdairi --config " + config + " notebook run --notebook " + notebookid
+            )
+            with subprocess.Popen(
+                batcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
+            ) as pipe:
                 _ = pipe.communicate()[0].decode()
 
             json_notebook = ZDairiNotebookHandler.print_notebook(
-                notebookid=notebookid, config=config)
+                notebookid=notebookid, config=config
+            )
 
             for cell in json_notebook["paragraphs"]:
                 if len(cell.get("results", [])) > 0:
@@ -497,7 +595,10 @@ class ZDairiNotebookHandler:
             status = Status.FAIL
             messages.append(
                 "Exception encountered while trying to create a notebook: "
-                + filepath + " for user in config: " + config)
+                + filepath
+                + " for user in config: "
+                + config
+            )
             messages.append(output)
 
         return output, msg, status
@@ -507,13 +608,17 @@ class GDMPBenchmarker:
     """
     Class used to run benchmarks for the Gaia Data Mining platform
     """
+
     DEFAULT_DIR = "/tmp/"
     DEFAULT_USER_CONFIG = "user1.yml"
 
-    def __init__(self, userconfig: str = "", zeppelin_url: str = "",
-                 verbose: bool = False,
-                 notebook_handler: NotebookHandler = ZDairiNotebookHandler):
-
+    def __init__(
+        self,
+        userconfig: str = "",
+        zeppelin_url: str = "",
+        verbose: bool = False,
+        notebook_handler: NotebookHandler = ZDairiNotebookHandler,
+    ):
         self.verbose = verbose
         self.zeppelin_url = zeppelin_url.strip("/")
         self.userconfig = userconfig
@@ -560,18 +665,25 @@ class GDMPBenchmarker:
             with open(self.userconfig, encoding="utf-8") as user_file:
                 user_dictionary = json.load(user_file)
         except JSONDecodeError as exc:
-            raise InvalidConfigurationError("User configuration is not a valid json file!") from exc
+            raise InvalidConfigurationError(
+                "User configuration is not a valid json file!"
+            ) from exc
 
         user_list = user_dictionary.get("users", [])
         for user in user_list:
             shiro_user = user.get("shirouser", {})
             if shiro_user:
-                with open(self.DEFAULT_DIR + "user" + str(counter) + ".yml", "w",
-                          encoding="utf-8") as user_file:
+                with open(
+                    self.DEFAULT_DIR + "user" + str(counter) + ".yml",
+                    "w",
+                    encoding="utf-8",
+                ) as user_file:
                     user_file.write("zeppelin_url: " + self.zeppelin_url + "\n")
                     user_file.write("zeppelin_auth: true\n")
                     user_file.write("zeppelin_user: " + shiro_user.get("name") + "\n")
-                    user_file.write("zeppelin_password: " + shiro_user.get("password") + "\n")
+                    user_file.write(
+                        "zeppelin_password: " + shiro_user.get("password") + "\n"
+                    )
                 counter += 1
 
         return len(user_list)
@@ -608,11 +720,12 @@ class GDMPBenchmarker:
             None
         """
         data["name"] = filepath
-        with open(filepath, 'w+', encoding="utf-8") as cred:
+        with open(filepath, "w+", encoding="utf-8") as cred:
             json.dump(data, cred)
 
-    def run_notebook(self, filepath: str, name: str,
-                     concurrent: bool = False) -> Results:
+    def run_notebook(
+        self, filepath: str, name: str, concurrent: bool = False
+    ) -> Results:
         """
         Run a Zeppelin notebook, given a path and name for it.
         Return the status of the job and how long it took to execute
@@ -636,12 +749,14 @@ class GDMPBenchmarker:
         self._write_data_to_file(data=data, filepath=tmpfile)
 
         # Create Notebook
-        notebookid = self.notebook_handler.create_notebook(config=config,
-                                                           filepath=tmpfile, messages=messages)
+        notebookid = self.notebook_handler.create_notebook(
+            config=config, filepath=tmpfile, messages=messages
+        )
 
         # Run Notebook
         output, msg, status = self.notebook_handler.execute_notebook(
-            config=config, notebookid=notebookid, filepath=tmpfile, messages=messages)
+            config=config, notebookid=notebookid, filepath=tmpfile, messages=messages
+        )
 
         end = time.time()
         endtime_iso = datetime.now()
@@ -649,17 +764,28 @@ class GDMPBenchmarker:
         timing = Timing(
             result=Status.PASS,
             totaltime=int(end - start),
-            start=starttime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z'),
-            finish=endtime_iso.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+            start=starttime_iso.strftime("%Y-%m-%dT%H:%M:%S.%f%z"),
+            finish=endtime_iso.strftime("%Y-%m-%dT%H:%M:%S.%f%z"),
         )
 
-        return Results(result=status, msg=msg,
-                       output=output,
-                       time=timing, notebookid=notebookid,
-                       user_config=config, messages=messages)
+        return Results(
+            result=status,
+            msg=msg,
+            output=output,
+            time=timing,
+            notebookid=notebookid,
+            user_config=config,
+            messages=messages,
+        )
 
-    def run(self, usercount: int = 1, notebook_config: str = "",
-            delay_start: int = 0, delay_notebook: int = 0, delete: bool = True):
+    def run(
+        self,
+        usercount: int = 1,
+        notebook_config: str = "",
+        delay_start: int = 0,
+        delay_notebook: int = 0,
+        delete: bool = True,
+    ) -> list:
         """
         Wrapper method to run a notebook test, either as a concurrent benchmark or as a single one
 
@@ -671,7 +797,7 @@ class GDMPBenchmarker:
             delete: Whether to delete the notebooks after the test
 
         Returns:
-            None
+            List of Results
         """
 
         def parse_notebook_config(note_config: str):
@@ -691,16 +817,27 @@ class GDMPBenchmarker:
 
         notebooks = parse_notebook_config(notebook_config)
         if usercount > 1:
-            results = self._run_parallel(usercount=usercount, notebooks=notebooks,
-                                         delay_start=delay_start,
-                                         delay_notebook=delay_notebook, delete=delete)
+            results = self._run_parallel(
+                usercount=usercount,
+                notebooks=notebooks,
+                delay_start=delay_start,
+                delay_notebook=delay_notebook,
+                delete=delete,
+            )
         else:
-            results = self._run_single(0, notebooks, False, delay_start, delay_notebook, delete)
+            results = self._run_single(
+                0, notebooks, False, delay_start, delay_notebook, delete
+            )
         return results
 
-    def _run_parallel(self, usercount: int = 1, notebooks: List = None,
-                      delay_start: int = 0, delay_notebook: int = 0,
-                      delete: bool = True):
+    def _run_parallel(
+        self,
+        usercount: int = 1,
+        notebooks: List = None,
+        delay_start: int = 0,
+        delay_notebook: int = 0,
+        delete: bool = True,
+    ):
         """
         Run the benchmarks in the given configuration as a parallel test
         with multiple concurrent users
@@ -725,10 +862,19 @@ class GDMPBenchmarker:
             """
             raise ValueError(err_msg)
         with Pool(processes=usercount) as pool:
-            results = pool.starmap(self._run_single, list(
-                zip(range(1, usercount+1), [notebooks] * usercount,
-                    [True] * usercount, [delay_start] * usercount,
-                    [delay_notebook] * usercount, [delete] * usercount)))
+            results = pool.starmap(
+                self._run_single,
+                list(
+                    zip(
+                        range(1, usercount + 1),
+                        [notebooks] * usercount,
+                        [True] * usercount,
+                        [delay_start] * usercount,
+                        [delay_notebook] * usercount,
+                        [delete] * usercount,
+                    )
+                ),
+            )
         pool.close()
         pool.join()
         return results
@@ -755,13 +901,21 @@ class GDMPBenchmarker:
             if expected != "":
                 out_valid = False
                 result_status_msg = Status.FAIL
-                output_msg = f"Expected/Actual output missmatch " \
-                             f"of cell #{cell_number}!"
+                output_msg = (
+                    f"Expected/Actual output missmatch " f"of cell #{cell_number}!"
+                )
 
         return out_valid, result_status_msg, output_msg
 
-    def _run_single(self, iterable: int = 0, notebooks: List = None, concurrent: bool = False,
-                    delay_start: int = 0, delay_notebook: int = 0, delete: bool = True):
+    def _run_single(
+        self,
+        iterable: int = 0,
+        notebooks: List = None,
+        concurrent: bool = False,
+        delay_start: int = 0,
+        delay_notebook: int = 0,
+        delete: bool = True,
+    ):
         """
         Run a single instance of the benchmark test
 
@@ -783,17 +937,21 @@ class GDMPBenchmarker:
 
         for notebook in notebooks:
             output_valid = True
-            generated_name = ''.join(random.choice(
-                string.ascii_uppercase + string.digits) for _ in range(10))
-            result = self.run_notebook(notebook.filepath, generated_name, concurrent)  # Results
+            generated_name = "".join(
+                random.choice(string.ascii_uppercase + string.digits) for _ in range(10)
+            )
+            result = self.run_notebook(
+                notebook.filepath, generated_name, concurrent
+            )  # Results
             created_notebooks.append([result.notebookid, result.user_config])
 
-            if len(notebook.expected_output) > 0 and result.result!=Status.ERROR:
+            if len(notebook.expected_output) > 0 and result.result != Status.ERROR:
                 for i, cell in enumerate(result.output):
-                    actual_output = hashlib.md5(str(cell).encode('utf-8')).hexdigest()
+                    actual_output = hashlib.md5(str(cell).encode("utf-8")).hexdigest()
                     expected_output = notebook.expected_output.get(str(i), "")
-                    output_valid, result.result, res_message = \
-                        self._validate_output(actual_output, expected_output, i)
+                    output_valid, result.result, res_message = self._validate_output(
+                        actual_output, expected_output, i
+                    )
                     if not output_valid:
                         result.messages.append(res_message)
                         result.logs += res_message
@@ -817,7 +975,9 @@ class GDMPBenchmarker:
 
         if delete:
             for notebook in created_notebooks:
-                self.notebook_handler.delete_notebook(notebookid=notebook[0], config=notebook[1])
+                self.notebook_handler.delete_notebook(
+                    notebookid=notebook[0], config=notebook[1]
+                )
 
         return results
 
@@ -859,23 +1019,55 @@ def main(args: List[str] = None):
             }
 """
 
-    parser = argparse.ArgumentParser(description='Gaia Data Mining Platform Benchmarking Tool')
+    parser = argparse.ArgumentParser(
+        description="Gaia Data Mining Platform Benchmarking Tool"
+    )
 
-    parser.add_argument('--zeppelin_url', required=True,
-                        type=str, default=1, help='Zeppelin URL')
-    parser.add_argument('--usercount', type=int, required=True,
-                        default=1, help='Number of users (default: 1)')
-    parser.add_argument('--notebook_config', type=str, required=True, default='',
-                        help=notebook_config_docs)
-    parser.add_argument('--user_config', type=str, required=True, default='',
-                        help=user_config_docs)
-    parser.add_argument('--delay_start', type=int, default=0,
-                        help='Number of seconds to delay start of test (default: 0)')
-    parser.add_argument('--delay_notebook', type=int, default=0,
-                        help='Number of seconds to delay each notebook (default: 0)')
-    parser.add_argument('--delete', action='store_true',
-                        help='Whether to delete the notebooks after the test')
+    parser.add_argument(
+        "--zeppelin_url", required=True, type=str, default=1, help="Zeppelin URL"
+    )
+    parser.add_argument(
+        "--usercount",
+        type=int,
+        required=True,
+        default=1,
+        help="Number of users (default: 1)",
+    )
+    parser.add_argument(
+        "--notebook_config",
+        type=str,
+        required=True,
+        default="",
+        help=notebook_config_docs,
+    )
+    parser.add_argument(
+        "--user_config", type=str, required=True, default="", help=user_config_docs
+    )
+    parser.add_argument(
+        "--delay_start",
+        type=int,
+        default=0,
+        help="Number of seconds to delay start of test (default: 0)",
+    )
+    parser.add_argument(
+        "--delay_notebook",
+        type=int,
+        default=0,
+        help="Number of seconds to delay each notebook (default: 0)",
+    )
+    parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="Whether to delete the notebooks after the test",
+    )
 
+    parser.add_argument(
+        "--slack_webhook",
+        type=str,
+        required=False,
+        default=None,
+        help="Whether to delete the notebooks after the test",
+    )
     args = parser.parse_args(args)
 
     zeppelin_url = args.zeppelin_url
@@ -884,6 +1076,7 @@ def main(args: List[str] = None):
     user_config = args.user_config
     delay_start = args.delay_start
     delay_notebook = args.delay_notebook
+    alerter = SlackAlerter(args.slack_webhook) if args.slack_webhook else None
 
     print("{")
     print(
@@ -912,9 +1105,14 @@ def main(args: List[str] = None):
         delay_notebook=delay_notebook,
     )
 
+    if alerter is not None:
+        alerter.send_alert(
+            content=results, alert_strategy=AlertStrategies.SLOW_AND_ERROR
+        )
+
     pprint(results)
     print("---end---")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])
