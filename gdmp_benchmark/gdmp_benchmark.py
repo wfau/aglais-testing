@@ -3,7 +3,6 @@ Module that can be used to run benchmarks against an instance of the Gaia Data M
 """
 # pylint: disable-msg=too-many-locals
 # pylint: disable-msg=too-many-arguments
-# pylint: disable-msg=bad-continuation
 
 import sys
 import subprocess
@@ -286,7 +285,10 @@ class SlackAlerter:
         """
         # Send the HTTP POST request to the webhook URL
         response = requests.post(
-            url, json={"text": msg}, headers={"Content-Type": "application/json"}
+            url,
+            json={"text": msg},
+            headers={"Content-Type": "application/json"},
+            timeout=300,
         )
 
         # Check the response status
