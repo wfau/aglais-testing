@@ -295,9 +295,7 @@ class SlackAlerter:
                 "Failed to send message. Status code: %s", response.status_code
             )
 
-    def send_alert(
-        self, content: list, alert_strategy: AlertStrategies.SLOW_AND_ERROR
-    ) -> None:
+    def send_alert(self, content: list, alert_strategy: AlertStrategies) -> None:
         """Send an alert"""
         for test in content:
             if test.result in ALERT_STRATEGIES_MAP.get(
@@ -986,7 +984,7 @@ def main(args: List[str] = None):
 
     if alerter is not None:
         alerter.send_alert(
-            content=results, alert_strategy=AlertStrategies.SLOW_AND_ERROR
+            content=results, alert_strategy=AlertStrategies.ONLY_ON_ERROR
         )
 
     pprint(results)
