@@ -144,6 +144,7 @@ class Timing:
         )
 
     def __repr__(self):
+        """Return repr view"""
         return str(
             {
                 "result": self.result,
@@ -222,6 +223,18 @@ class Results:
         }
 
     def __str__(self):
+        return str(
+            {
+                "name": self.name,
+                "result": str(self.result),
+                "outputs": self.outputs,
+                "messages": self.messages,
+                "time": self.time,
+                "logs": self.logs,
+            }
+        )
+
+    def __repr__(self):
         return str(
             {
                 "name": self.name,
@@ -314,7 +327,6 @@ class SlackAlerter:
 class Notebook:
     """
     Stores Notebook info
-
     Attributes:
          name (str): The name of the notebook
          filepath (str): The filepath of the notebook
@@ -364,7 +376,6 @@ class NotebookHandler(Protocol):
         Args:
             notebookid (str): The ID of the notebook to delete
             config (str): The configuration for the user
-
         Returns:
             None
         """
@@ -384,8 +395,6 @@ class ZDairiNotebookHandler:
         Args:
             notebookid (str): The ID of the notebook to delete
             config (str): The configuration for the user
-        Returns:
-            None
         """
 
         batcmd = (
@@ -436,7 +445,6 @@ class ZDairiNotebookHandler:
     def print_notebook(notebookid: str, config: str) -> dict:
         """
         Print notebook
-
         Args:
             notebookid: ID of the notebook
             config: User configuration file
@@ -461,7 +469,6 @@ class ZDairiNotebookHandler:
     ) -> tuple:
         """
         Execute a notebook
-
         Args:
             config (str): The configuration for the user
             notebookid (str): The notebook ID
@@ -556,7 +563,6 @@ class GDMPBenchmarker:
             zeppelin_auth:
             zeppelin_user:
             zeppelin_password:
-
         Returns:
              int: Number of users
         Raises:
@@ -613,7 +619,6 @@ class GDMPBenchmarker:
     def _write_data_to_file(data: dict, filepath: str) -> None:
         """
         Write some data to a file
-
         Args:
             data: Dictionary of the data
             filepath: The file to write to
@@ -628,7 +633,6 @@ class GDMPBenchmarker:
         """
         Run a Zeppelin notebook, given a path and name for it.
         Return the status of the job and how long it took to execute
-
         Args:
             filepath: String with the filepath
             name: Name of the notebooks
@@ -686,7 +690,6 @@ class GDMPBenchmarker:
     ) -> list:
         """
         Wrapper method to run a notebook test, either as a concurrent benchmark or as a single one
-
         Args:
             usercount: Number of users
             notebook_config: Notebook configuration file,
@@ -737,7 +740,6 @@ class GDMPBenchmarker:
         """
         Run the benchmarks in the given configuration as a parallel test
         with multiple concurrent users
-
         Args:
             usercount: Number of users
             notebooks: Notebook List
@@ -811,7 +813,6 @@ class GDMPBenchmarker:
     ):
         """
         Run a single instance of the benchmark test
-
         Args:
             iterable: Order of the user in a concurrent run
             notebooks: Notebook list
@@ -946,7 +947,6 @@ def main(args: List[str] = None):
         help="Whether to delete the notebooks after the test",
     )
     args = parser.parse_args(args)
-
     zeppelin_url = args.zeppelin_url
     usercount = args.usercount
     notebook_config = args.notebook_config
