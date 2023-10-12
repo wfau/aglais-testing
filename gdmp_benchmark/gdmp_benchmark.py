@@ -280,10 +280,7 @@ class SlackAlerter:
 
     @staticmethod
     def send_http(msg: str, url: str):
-        """
-        Send an http request with msg as a 'text' parameter
-        """
-        # Send the HTTP POST request to the webhook URL
+        """Send an http request with msg as a 'text' parameter"""
         response = requests.post(
             url,
             json={"text": msg},
@@ -291,7 +288,6 @@ class SlackAlerter:
             timeout=300,
         )
 
-        # Check the response status
         if response.status_code == 200:
             logging.info("Message sent successfully to Slack!")
         else:
