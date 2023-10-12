@@ -1,6 +1,5 @@
 """
 Module that can be used to run benchmarks against an instance of the Gaia Data Mining Platform
-
 """
 # pylint: disable-msg=too-many-locals
 # pylint: disable-msg=too-many-arguments
@@ -25,9 +24,7 @@ import requests
 
 
 class InvalidConfigurationError(Exception):
-    """
-    Exception to be raised when the configuration passed in is invalid
-    """
+    """Exception to be raised when the configuration passed in is invalid"""
 
     __module__ = Exception.__module__
 
@@ -40,7 +37,6 @@ def validate_not_empty(val):
     """
     Args:
         val: The value to validate
-
     Raises:
          ValueError: If value is empty
     """
@@ -54,7 +50,6 @@ def validate_positive(val):
     """
     Args:
         val: The value to validate
-
     Raises:
          ValueError: If value is not positive
          TypeError: If value is not an int
@@ -73,7 +68,6 @@ def validate(instance):
     Validate the parameter types of a class instance
     Args:
         instance: The instance of a class
-
     Raises:
          TypeError: If type does not match Type hint
     """
@@ -85,9 +79,7 @@ def validate(instance):
 
 
 class Status(str, Enum):
-    """
-    Status of the timing for a notebook run
-    """
+    """Status of the timing for a notebook run"""
 
     SLOW = "SLOW"
     FAST = "FAST"
@@ -103,11 +95,7 @@ class Status(str, Enum):
         return self.value
 
     def to_json(self):
-        """
-        Format as json
-        Returns:
-            str
-        """
+        """Return as json"""
         return self.value
 
 
@@ -115,7 +103,6 @@ class Status(str, Enum):
 class Timing:
     """
     Stores the Timing info of Notebook run.
-
     Attributes:
         result (Status): The result of the operation.
         totaltime (int): The total execution time
@@ -140,7 +127,6 @@ class Timing:
         Get percentage change (Total time - expected time) / expected_time
         Returns:
             str: Percentage change
-
         """
         if self.expected and self.totaltime > 0:
             return f"{((self.totaltime - self.expected) / self.expected) * 100:.2f}"
@@ -169,11 +155,7 @@ class Timing:
         )
 
     def to_json(self):
-        """
-        Format as json
-        Returns:
-            dict
-        """
+        """Return as json"""
         return {
             "result": self.result,
             "elapsed": f"{self.totaltime:.2f}",
@@ -183,11 +165,7 @@ class Timing:
         }
 
     def to_dict(self):
-        """
-        To Dict method
-        Returns:
-            dict: The dict
-        """
+        """Return as dictionary"""
         dict_view = self.__dict__
         dict_view["percent_change"] = self.percent_change
         return dict_view
@@ -225,19 +203,11 @@ class Results:
     name: str = ""
 
     def __post_init__(self):
-        """
-        post_init method
-        Returns:
-            None
-        """
+        """post_init method"""
         validate(self)
 
     def to_dict(self):
-        """
-        To Dictionary
-        Returns:
-            dict: The dictionary
-        """
+        """Return as dictionary"""
         return {
             "result": self.result,
             "msg": self.msg,
@@ -263,25 +233,8 @@ class Results:
             }
         )
 
-    def __repr__(self):
-        return json.dumps(
-            {
-                "name": self.name,
-                "result": str(self.result),
-                "outputs": self.outputs,
-                "messages": self.messages,
-                "time": self.time.to_json(),
-                "logs": self.logs,
-            },
-            indent=4,
-        )
-
     def to_json(self) -> str:
-        """
-        Convert to JSON
-        Returns:
-            str
-        """
+        """Convert to JSON"""
 
         return json.dumps(
             {
@@ -296,12 +249,11 @@ class Results:
         )
 
 
-class Alertable(Protocol):
-    def send_alert(self, message: Results, only_on_error: bool = True) -> None:
-        ...
-
-
 class AlertStrategies(Enum):
+    """
+    Alerting Strategies
+    """
+
     ONLY_ON_ERROR = "ONLY_ON_ERROR"
     SLOW_AND_ERROR = "SLOW_AND_ERROR"
     ALLWAYS = "ALLWAYS"
@@ -321,27 +273,32 @@ ALERT_STRATEGIES_MAP = {
 
 
 class SlackAlerter:
+    """Slack Alerter Class, used to send out alerts to slack channels"""
+
     def __init__(self, webhook):
         self.webhook = webhook
 
     @staticmethod
     def send_http(msg: str, url: str):
-        # Send the HTTP POST request to the webhook URL
+        """Send an http request with msg as a 'text' parameter"""
         response = requests.post(
-            url, json={"text": msg}, headers={"Content-Type": "application/json"}
+            url,
+            json={"text": msg},
+            headers={"Content-Type": "application/json"},
+            timeout=300,
         )
 
-        # Check the response status
         if response.status_code == 200:
             logging.info("Message sent successfully to Slack!")
         else:
             logging.warning(
-                f"Failed to send message. Status code: {response.status_code}"
+                "Failed to send message. Status code: %s", response.status_code
             )
 
     def send_alert(
         self, content: list, alert_strategy: AlertStrategies.SLOW_AND_ERROR
     ) -> None:
+        """Send an alert"""
         for test in content:
             if test.result in ALERT_STRATEGIES_MAP.get(
                 alert_strategy, True
@@ -351,6 +308,7 @@ class SlackAlerter:
 
     @staticmethod
     def format_message(content: Results) -> str:
+        """Format a message"""
         return json.dumps(content, default=str)
 
 
@@ -380,22 +338,11 @@ class Notebook:
 
 
 class NotebookHandler(Protocol):
-    """
-    Protocol for a Notebook handling Class
-    """
+    """Protocol for a Notebook handling Class"""
 
     @staticmethod
     def create_notebook(config: str, filepath: str, messages: list) -> str:
-        """
-        Create a Notebook
-        Args:
-            config:
-            filepath:
-            messages:
-
-        Returns:
-            str:
-        """
+        """Create a notebook"""
         # pylint: disable=W0107
         pass
 
@@ -403,43 +350,19 @@ class NotebookHandler(Protocol):
     def execute_notebook(
         config: str, notebookid: str, filepath: str, messages: list
     ) -> tuple:
-        """
-        Execute a notebook
-
-        Args:
-            config (str): The configuration for the user
-            notebookid (str): The notebook ID
-            filepath (str): The path for the notebook to create
-            messages (list): The list of messages to append to
-
-        Returns:
-            output: A list of output, each element being a single cell output
-            msg: Result message
-            status: Status message
-        """
+        """Execute a notebook"""
         # pylint: disable=W0107
         pass
 
     @staticmethod
     def print_notebook(notebookid: str, config: str) -> dict:
-        """
-        Print notebook
-
-        Args:
-            notebookid: ID of the notebook
-            config: User configuration file
-
-        Returns:
-            dict: JSON dictionary of notebook
-        """
+        """Print a notebook"""
         # pylint: disable=W0107
         pass
 
     @staticmethod
     def delete_notebook(notebookid: str, config: str) -> None:
         """
-        Delete notebook
-
         Args:
             notebookid (str): The ID of the notebook to delete
             config (str): The configuration for the user
@@ -453,20 +376,16 @@ class NotebookHandler(Protocol):
 
 class ZDairiNotebookHandler:
     """
-    Implementation of the Notebook Handler Protocol
-    Provides methods for creating, executing, printing
-        and deleting notebooks
+    Implementation of the Notebook Handler Protocol.cProvides methods for creating, executing,
+    printing and deleting notebooks
     """
 
     @staticmethod
     def delete_notebook(notebookid: str, config: str) -> None:
         """
-        Delete notebook
-
         Args:
             notebookid (str): The ID of the notebook to delete
             config (str): The configuration for the user
-
         Returns:
             None
         """
@@ -482,13 +401,10 @@ class ZDairiNotebookHandler:
     @staticmethod
     def create_notebook(config: str, filepath: str, messages: list) -> str:
         """
-        Create a notebook
-
         Args:
             config (str): The configuration for the user
             filepath (str): The path for the notebook to create
             messages (list): The list of messages to append to
-
         Returns:
             notebookid: The ID for the new notebook
         """
@@ -526,7 +442,6 @@ class ZDairiNotebookHandler:
         Args:
             notebookid: ID of the notebook
             config: User configuration file
-
         Returns:
             dict: JSON dictionary of notebook
         """
@@ -554,7 +469,6 @@ class ZDairiNotebookHandler:
             notebookid (str): The notebook ID
             filepath (str): The path for the notebook to create
             messages (list): The list of messages to append to
-
         Returns:
             output: A list of output, each element being a single cell output
             msg: Result message
@@ -605,9 +519,7 @@ class ZDairiNotebookHandler:
 
 
 class GDMPBenchmarker:
-    """
-    Class used to run benchmarks for the Gaia Data Mining platform
-    """
+    """Class used to run benchmarks for the Gaia Data Mining platform"""
 
     DEFAULT_DIR = "/tmp/"
     DEFAULT_USER_CONFIG = "user1.yml"
@@ -629,11 +541,7 @@ class GDMPBenchmarker:
 
     @staticmethod
     def get_note(path: str) -> Dict[str, str]:
-        """
-        Get the json file given a path (URL or file), and return as a json object
-        :type path: str
-        :rtype: dict
-        """
+        """Get the json file given a path (URL or file), and return as a json object"""
         if path.startswith("http"):
             res = requests.get(path, timeout=30).text
             data = json.loads(res, strict=False)
@@ -646,7 +554,6 @@ class GDMPBenchmarker:
         """
         Generate the user configurations that can be used by the zdairi lib
         These need to be yml files with the following format:
-
             zeppelin_url:
             zeppelin_auth:
             zeppelin_user:
@@ -654,7 +561,6 @@ class GDMPBenchmarker:
 
         Returns:
              int: Number of users
-
         Raises:
             InvalidConfigurationError: If User configuration is not a valid Json file
         """
@@ -690,10 +596,8 @@ class GDMPBenchmarker:
 
     def _get_user_config(self, concurrent: bool) -> str:
         """
-
         Args:
             concurrent (bool): Whether this is a concurrent test
-
         Returns:
             config (str): The user config path
         """
@@ -715,9 +619,6 @@ class GDMPBenchmarker:
         Args:
             data: Dictionary of the data
             filepath: The file to write to
-
-        Returns:
-            None
         """
         data["name"] = filepath
         with open(filepath, "w+", encoding="utf-8") as cred:
@@ -734,7 +635,6 @@ class GDMPBenchmarker:
             filepath: String with the filepath
             name: Name of the notebooks
             concurrent: Whether the notebook is part of a concurrent run
-
         Returns:
             Results: The results
         """
@@ -795,7 +695,6 @@ class GDMPBenchmarker:
             delay_start: Number of seconds to delay start of test
             delay_notebook: Number of seconds to delay each notebook
             delete: Whether to delete the notebooks after the test
-
         Returns:
             List of Results
         """
@@ -805,7 +704,6 @@ class GDMPBenchmarker:
             Parse the notebook configuration
             Args:
                 note_config: Notebook config as string
-
             Returns:
                 list: Notebook list
             """
@@ -848,10 +746,8 @@ class GDMPBenchmarker:
             delay_start: Delay start in seconds
             delay_notebook: Delay to start of notebook in seconds
             delete: Whether to delete the notebooks after the run
-
         Returns:
             dict: The results
-
         Raises:
             ValueError: If User count exceeds maximum
         """
@@ -891,7 +787,6 @@ class GDMPBenchmarker:
              bool: Whether the output is valid
              Status: Result Status
              str: Output message
-
         """
         out_valid = True
         result_status_msg = Status.PASS
@@ -926,7 +821,6 @@ class GDMPBenchmarker:
             delay_start: Delay ot the start of the run in seconds
             delay_notebook: Delay to the start of the notebook in seconds
             delete: Whether to delete the notebooks after the run
-
         Returns:
            dict: The results
         """
@@ -983,42 +877,27 @@ class GDMPBenchmarker:
 
 
 def main(args: List[str] = None):
-    """
-    Main Function
-    Args:
-        args: Arguments
-
-    """
+    """Main method"""
     user_config_docs = """The user configuration file in JSON format.
-            {
-            "users": [
-                        {
+            { "users": [{    
                             "username": "user1",
                             "shirouser": {
                                 "name": "user1",
                                 "password": "pass1"
-                            }
-                
-                        }
-                    ]
+                            }          
+                       }]
             }
     """
 
     notebook_config_docs = """The notebook configuration file in JSON format.
-      {
-            "notebooks" : [
-                       {
-                          "name" : "GaiaDMPSetup",
-                          "filepath" : "/path/GaiaDMP_validation.json",
-                          "totaltime" : 50,
-                          "results" : []
-                       }
-            
-            
-            ]
+            { "notebooks" : [{
+                               "name" : "GaiaDMPSetup",
+                               "filepath" : "/path/GaiaDMP_validation.json",
+                               "totaltime" : 50,
+                               "results" : []
+                            }] 
             }
-"""
-
+    """
     parser = argparse.ArgumentParser(
         description="Gaia Data Mining Platform Benchmarking Tool"
     )
