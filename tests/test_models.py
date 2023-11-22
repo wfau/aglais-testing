@@ -49,7 +49,7 @@ class TestResults(unittest.TestCase):
     #  Tests that a Results object cannot be created with invalid values for attributes.
     def test_results_invalid_attributes(self):
         with self.assertRaises(TypeError):
-            result = Results(result="success", msg="Test successful", output=["test output"], notebookid="1234",
+            Results(result="success", msg="Test successful", output=["test output"], notebookid="1234",
                              user_config="test config", messages=["test message"], logs="test logs",
                              time=Timing(result="success", totaltime="10s", start="2022-01-01 00:00:00",
                                           finish="2022-01-01 00:00:10"), outputs={"test": "output"}, name=1234)
@@ -101,7 +101,7 @@ class TestTiming(unittest.TestCase):
     #  Tests creating a Timing object with a negative totaltime.
     def test_timing_negative_totaltime(self):
         with self.assertRaises(ValueError):
-            timing = Timing(result=Status.PASS, totaltime=-10, start="2022-01-01 00:00:00", finish="2022-01-01 00:00:10")
+            Timing(result=Status.PASS, totaltime=-10, start="2022-01-01 00:00:00", finish="2022-01-01 00:00:10")
 
     #  Tests that the percent_change attribute is calculated correctly based on expected and actual totaltime.
     def test_percent_change(self):
