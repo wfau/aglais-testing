@@ -17,7 +17,6 @@ from datetime import datetime
 from multiprocessing import Pool, current_process
 from typing import List, Dict, Protocol
 from dataclasses import dataclass, field, fields
-from pprint import pprint
 import simplejson as json
 from simplejson.errors import JSONDecodeError
 import requests
@@ -158,7 +157,7 @@ class Timing:
     def to_json(self):
         """Return as json"""
         return {
-            "result": self.result,
+            "result": self.result.to_json(),
             "elapsed": f"{self.totaltime:.2f}",
             "percent": self.percent_change,
             "start": self.start,
@@ -249,17 +248,16 @@ class Results:
     def to_json(self) -> str:
         """Convert to JSON"""
 
-        return json.dumps(
+        return json.dumps(str(
             {
                 "name": self.name,
                 "result": str(self.result),
                 "outputs": self.outputs,
                 "messages": self.messages,
-                "time": self.time,
+                "time": self.time.to_json(),
                 "logs": self.logs,
-            },
-            indent=4,
-        )
+            }
+        ))
 
 
 class AlertStrategies(Enum):
@@ -810,7 +808,7 @@ class GDMPBenchmarker:
         delay_start: int = 0,
         delay_notebook: int = 0,
         delete: bool = True,
-    ):
+    ) -> list:
         """
         Run a single instance of the benchmark test
         Args:
@@ -821,7 +819,7 @@ class GDMPBenchmarker:
             delay_notebook: Delay to the start of the notebook in seconds
             delete: Whether to delete the notebooks after the run
         Returns:
-           dict: The results
+           list: The results
         """
 
         results = []
@@ -872,7 +870,7 @@ class GDMPBenchmarker:
                     notebookid=notebook[0], config=notebook[1]
                 )
 
-        return results
+        return [results]
 
 
 def main(args: List[str] = None):
@@ -971,6 +969,7 @@ def main(args: List[str] = None):
     print("}")
 
     print("---start---")
+
     results = GDMPBenchmarker(
         userconfig=user_config,
         zeppelin_url=zeppelin_url,
@@ -986,8 +985,7 @@ def main(args: List[str] = None):
         alerter.send_alert(
             content=results, alert_strategy=AlertStrategies.ONLY_ON_ERROR
         )
-
-    pprint(results)
+    print(json.dumps(results, default=lambda o: o.to_dict(), indent=4))
     print("---end---")
 
 
