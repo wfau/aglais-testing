@@ -870,7 +870,7 @@ class GDMPBenchmarker:
                     notebookid=notebook[0], config=notebook[1]
                 )
 
-        return [results]
+        return results
 
 
 def main(args: List[str] = None):
