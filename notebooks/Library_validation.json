@@ -36,7 +36,7 @@
       "$$hashKey": "object:2622"
     },
     {
-      "text": "%pyspark\n\n# Check scipy\n\nimport scipy\nassert scipy.__version__ == \"1.6.3\" ",
+      "text": "%pyspark\n\n# Check scipy\n\nimport scipy\nassert scipy.__version__ == \"1.7.3\" ",
       "user": "gaiauser",
       "dateUpdated": "2022-03-16T18:34:46+0000",
       "progress": 0,
