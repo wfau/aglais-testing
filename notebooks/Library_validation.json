@@ -435,7 +435,7 @@
     {
       "text": "%pyspark\nimport mwdust\nassert mwdust.__version__ ==\"1.5.post0\"\n",
       "user": "gaiauser",
-      "dateUpdated"gaiauser: "2023-11-28T12:38:30+0000",
+      "dateUpdated": "2023-11-28T12:38:30+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
