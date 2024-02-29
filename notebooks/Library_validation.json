@@ -1,10 +1,9 @@
-
-{
+﻿{
   "paragraphs": [
     {
-      "text": "%pyspark\n\n# Check Numpy\n\nimport numpy\nassert numpy.__version__ == \"1.21.0\" ",
+      "text": "%pyspark\n\n# Check Numpy\n\nimport numpy\nassert numpy.__version__ == \"1.26.2\" ",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:45+0000",
+      "dateUpdated": "2024-02-29T13:35:15+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -26,19 +25,19 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684908_816456362",
+      "jobName": "paragraph_1709213551209_563233748",
       "id": "paragraph_1647455684908_816456362",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:45+0000",
-      "dateFinished": "2022-03-16T18:34:45+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:35:15+0000",
+      "dateFinished": "2024-02-29T13:35:15+0000",
       "status": "FINISHED",
       "focus": true,
-      "$$hashKey": "object:2622"
+      "$$hashKey": "object:2473"
     },
     {
-      "text": "%pyspark\n\n# Check scipy\n\nimport scipy\nassert scipy.__version__ == \"1.7.3\" ",
+      "text": "%pyspark\n\n# Check scipy\n\nimport scipy\nassert scipy.__version__ == \"1.11.4\" ",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:46+0000",
+      "dateUpdated": "2024-02-29T13:35:15+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -60,18 +59,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684909_1711122451",
+      "jobName": "paragraph_1709213551210_775363856",
       "id": "paragraph_1647455684909_1711122451",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:46+0000",
-      "dateFinished": "2022-03-16T18:34:46+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:35:15+0000",
+      "dateFinished": "2024-02-29T13:35:15+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2623"
+      "$$hashKey": "object:2474"
     },
     {
       "text": "%pyspark\n\n# Check jupyter\n\nimport jupyter\nassert jupyter.__version__ == \"1.0.0\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:46+0000",
+      "dateUpdated": "2024-02-29T13:35:15+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -93,18 +92,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684910_338094694",
+      "jobName": "paragraph_1709213551210_1923104599",
       "id": "paragraph_1647455684910_338094694",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:46+0000",
-      "dateFinished": "2022-03-16T18:34:46+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:35:15+0000",
+      "dateFinished": "2024-02-29T13:35:15+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2624"
+      "$$hashKey": "object:2475"
     },
     {
-      "text": "%pyspark\n\n# Check Cython\n\nimport Cython\nassert Cython.__version__ == \"0.29.23\"",
+      "text": "%pyspark\n\n# Check Cython\n\nimport Cython\nassert Cython.__version__ == \"0.29.36\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:46+0000",
+      "dateUpdated": "2024-02-29T13:35:15+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -126,18 +125,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684911_1073224810",
+      "jobName": "paragraph_1709213551210_1691296094",
       "id": "paragraph_1647455684911_1073224810",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:46+0000",
-      "dateFinished": "2022-03-16T18:34:46+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:35:15+0000",
+      "dateFinished": "2024-02-29T13:35:15+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2625"
+      "$$hashKey": "object:2476"
     },
     {
-      "text": "%pyspark\n\n# Check pandas\n\nimport pandas\nassert pandas.__version__ == \"1.2.4\"",
+      "text": "%pyspark\n\n# Check pandas\n\nimport pandas\nassert pandas.__version__ == \"2.1.3\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:46+0000",
+      "dateUpdated": "2024-02-29T13:35:21+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -159,18 +158,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684911_986045671",
+      "jobName": "paragraph_1709213551210_1174652565",
       "id": "paragraph_1647455684911_986045671",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:46+0000",
-      "dateFinished": "2022-03-16T18:34:47+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:35:15+0000",
+      "dateFinished": "2024-02-29T13:35:15+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2626"
+      "$$hashKey": "object:2477"
     },
     {
-      "text": "%pyspark\n\n# Check healpy\n\nimport healpy\nassert healpy.__version__ == \"1.14.0\"",
+      "text": "%pyspark\n\n# Check healpy\n\nimport healpy\nassert healpy.__version__ == \"1.16.6\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:48+0000",
+      "dateUpdated": "2024-02-29T13:36:13+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -192,18 +191,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684912_1080433776",
+      "jobName": "paragraph_1709213551210_658739171",
       "id": "paragraph_1647455684912_1080433776",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:48+0000",
-      "dateFinished": "2022-03-16T18:34:48+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:35:49+0000",
+      "dateFinished": "2024-02-29T13:35:49+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2627"
+      "$$hashKey": "object:2478"
     },
     {
-      "text": "%pyspark\n\n# Check astropy\n\nimport astropy\nassert astropy.__version__ == \"4.2.1\"",
+      "text": "%pyspark\n\n# Check astropy\n\nimport astropy\nassert astropy.__version__ == \"5.3.4\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:48+0000",
+      "dateUpdated": "2024-02-29T13:36:17+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -225,18 +224,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684915_642714948",
+      "jobName": "paragraph_1709213551210_556960768",
       "id": "paragraph_1647455684915_642714948",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:48+0000",
-      "dateFinished": "2022-03-16T18:34:48+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:36:08+0000",
+      "dateFinished": "2024-02-29T13:36:08+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2628"
+      "$$hashKey": "object:2479"
     },
     {
-      "text": "%pyspark\n\n# Check astroquery\n\nimport astroquery\nassert astroquery.__version__ == \"0.4.1\"",
+      "text": "%pyspark\n\n# Check astroquery\n\nimport astroquery\nassert astroquery.__version__ == \"0.4.6\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:49+0000",
+      "dateUpdated": "2024-02-29T13:36:43+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -258,18 +257,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684916_957320587",
+      "jobName": "paragraph_1709213551210_1540423475",
       "id": "paragraph_1647455684916_957320587",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:49+0000",
-      "dateFinished": "2022-03-16T18:34:49+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:36:43+0000",
+      "dateFinished": "2024-02-29T13:36:43+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2629"
+      "$$hashKey": "object:2480"
     },
     {
-      "text": "%pyspark\n\n# Check sklearn\n\nimport sklearn\nassert sklearn.__version__ == \"0.24.2\"",
+      "text": "%pyspark\n\n# Check sklearn\n\nimport sklearn\nassert sklearn.__version__ == \"1.3.2\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:49+0000",
+      "dateUpdated": "2024-02-29T13:37:10+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -291,18 +290,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684916_1769665284",
+      "jobName": "paragraph_1709213551210_214071695",
       "id": "paragraph_1647455684916_1769665284",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:49+0000",
-      "dateFinished": "2022-03-16T18:34:49+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:10+0000",
+      "dateFinished": "2024-02-29T13:37:10+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2630"
+      "$$hashKey": "object:2481"
     },
     {
       "text": "%pyspark\n\n# Check hdbscan\n# Can't check version as hdbscan does not have a __version__ attribute. Perhaps there is another way?\n\nimport hdbscan\n",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:50+0000",
+      "dateUpdated": "2024-02-29T13:37:13+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -324,18 +323,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684917_667822688",
+      "jobName": "paragraph_1709213551210_1041160099",
       "id": "paragraph_1647455684917_667822688",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:50+0000",
-      "dateFinished": "2022-03-16T18:34:50+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:13+0000",
+      "dateFinished": "2024-02-29T13:37:13+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2631"
+      "$$hashKey": "object:2482"
     },
     {
-      "text": "%pyspark\n\n# Check Pyvo\n\nimport pyvo\nassert pyvo.__version__ == \"1.1\"",
+      "text": "%pyspark\n\n# Check Pyvo\n\nimport pyvo\nassert pyvo.__version__ == \"1.5.1\"",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-16T18:34:51+0000",
+      "dateUpdated": "2024-02-29T13:40:50+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -358,18 +357,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455684917_39174970",
+      "jobName": "paragraph_1709213551210_383625193",
       "id": "paragraph_1647455684917_39174970",
-      "dateCreated": "2022-03-16T18:34:44+0000",
-      "dateStarted": "2022-03-16T18:34:51+0000",
-      "dateFinished": "2022-03-16T18:34:51+0000",
-      "status": "FINISHED",
-      "$$hashKey": "object:2632"
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:16+0000",
+      "dateFinished": "2024-02-29T13:37:16+0000",
+      "status": "ERROR",
+      "$$hashKey": "object:2483"
     },
     {
       "text": "%pyspark\nassert spark.conf.get(\"spark.sql.execution.arrow.pyspark.enabled\") == 'true'",
       "user": "gaiauser",
-      "dateUpdated": "2022-03-17T14:55:20+0000",
+      "dateUpdated": "2024-02-29T13:37:42+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -391,18 +390,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1647455753705_1743373765",
+      "jobName": "paragraph_1709213551210_1393433048",
       "id": "paragraph_1647455753705_1743373765",
-      "dateCreated": "2022-03-16T18:35:53+0000",
-      "dateStarted": "2022-03-17T14:55:20+0000",
-      "dateFinished": "2022-03-17T14:55:20+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:42+0000",
+      "dateFinished": "2024-02-29T13:37:43+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2953"
+      "$$hashKey": "object:2484"
     },
     {
       "text": "%pyspark\nimport dustmaps\nassert hasattr(dustmaps, '__name__')",
       "user": "gaiauser",
-      "dateUpdated": "2023-11-28T12:38:30+0000",
+      "dateUpdated": "2024-02-29T13:37:46+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -424,18 +423,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1701173836477_576614731",
+      "jobName": "paragraph_1709213551210_167897133",
       "id": "paragraph_1701173836477_576614731",
-      "dateCreated": "2023-11-28T12:17:16+0000",
-      "dateStarted": "2023-11-28T12:38:30+0000",
-      "dateFinished": "2023-11-28T12:38:30+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:46+0000",
+      "dateFinished": "2024-02-29T13:37:46+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2954"
+      "$$hashKey": "object:2485"
     },
     {
       "text": "%pyspark\nimport mwdust\nassert mwdust.__version__ ==\"1.5.post0\"\n",
       "user": "gaiauser",
-      "dateUpdated": "2023-11-28T12:38:30+0000",
+      "dateUpdated": "2024-02-29T13:37:48+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -457,18 +456,18 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1701173899224_1681448863",
+      "jobName": "paragraph_1709213551210_764483296",
       "id": "paragraph_1701173899224_1681448863",
-      "dateCreated": "2023-11-28T12:18:19+0000",
-      "dateStarted": "2023-11-28T12:38:30+0000",
-      "dateFinished": "2023-11-28T12:38:30+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:48+0000",
+      "dateFinished": "2024-02-29T13:37:48+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2955"
+      "$$hashKey": "object:2486"
     },
     {
       "text": "%pyspark\nimport zero_point\nassert zero_point.__version__==\"0.0.1\"\n",
       "user": "gaiauser",
-      "dateUpdated": "2023-11-28T12:38:30+0000",
+      "dateUpdated": "2024-02-29T13:37:49+0000",
       "progress": 0,
       "config": {
         "editorSetting": {
@@ -490,19 +489,50 @@
       "apps": [],
       "runtimeInfos": {},
       "progressUpdateIntervalMs": 500,
-      "jobName": "paragraph_1701173902865_519050887",
+      "jobName": "paragraph_1709213551210_971433668",
       "id": "paragraph_1701173902865_519050887",
-      "dateCreated": "2023-11-28T12:18:22+0000",
-      "dateStarted": "2023-11-28T12:38:30+0000",
-      "dateFinished": "2023-11-28T12:38:30+0000",
+      "dateCreated": "2024-02-29T13:32:31+0000",
+      "dateStarted": "2024-02-29T13:37:49+0000",
+      "dateFinished": "2024-02-29T13:37:49+0000",
       "status": "FINISHED",
-      "$$hashKey": "object:2956"
+      "$$hashKey": "object:2487"
+    },
+    {
+      "text": "%pyspark\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-02-29T13:37:49+0000",
+      "progress": 0,
+      "config": {
+        "colWidth": 12,
+        "fontSize": 9,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709213869904_798509532",
+      "id": "paragraph_1709213869904_798509532",
+      "dateCreated": "2024-02-29T13:37:49+0000",
+      "status": "READY",
+      "$$hashKey": "object:2488"
     }
   ],
   "name": "libraries.json",
-  "id": "2GZ96Z759",
+  "id": "2JR59NT51",
   "defaultInterpreterGroup": "spark",
-  "version": "0.10.0",
+  "version": "0.11.0-gaia-dmp-0.1",
   "noteParams": {},
   "noteForms": {},
   "angularObjects": {},
@@ -511,6 +541,8 @@
     "looknfeel": "default",
     "personalizedMode": "false"
   },
-  "info": {},
+  "info": {
+    "isRunning": false
+  },
   "path": "/tmp/libraries.json"
 }
