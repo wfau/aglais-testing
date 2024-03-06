@@ -1,0 +1,892 @@
+﻿{
+  "paragraphs": [
+    {
+      "text": "%md\n\n<!--\n\n    Gaia Data Processing and Analysis Consortium (DPAC) \n    Co-ordination Unit 9 Work Package 930, based on \n    original scripts provided by the Apache SW Foundation\n    \n    (c) 2005-2025 Gaia DPAC\n    \n    This program is free software: you can redistribute it and/or modify\n    it under the terms of the GNU General Public License as published by\n    the Free Software Foundation, either version 3 of the License, or\n    (at your option) any later version.\n\n    This program is distributed in the hope that it will be useful,\n    but WITHOUT ANY WARRANTY; without even the implied warranty of\n    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n    GNU General Public License for more details.\n\n    You should have received a copy of the GNU General Public License\n    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n    -->\n    \nThis notebook illustrates a few tips and tricks that should aid users in interacting with the platform via the Zeppelin user interface.",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_347853176",
+      "id": "paragraph_1646302979387_1967819699",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "focus": true,
+      "$$hashKey": "object:4258"
+    },
+    {
+      "title": "Resetting the Spark context",
+      "text": "%md\n\nUsers should be aware that the platform accesses a shared compute cluster. Depending on activity elsewhere cell execution may result in \"Pending\" jobs and we kindly request that users be patient. \n\nIf, however, a running notebook cell becomes unresponsive (e.g. goes away running and never comes back) or behaves in unexpected ways (the Python interpreter can get occasionally tied in knots) as a last resort you can reset using the \"Interpreter binding\" drop-down available from the top-level cog icon at the head of the notebook (N.B. _not_ the individual cog icon to the immediate upper-right of this cell). Click on this top-level cog then click on the circular arrows icon in the drop-down: this is the \"Restart\" button. Note that this will kill all currently executing jobs in your context and free up all memory so you must re-establish the platform set-up in the resulting fresh Spark context by executing in PySpark\n\n    import gaiadmpsetup\n\nbefore doing anything else. (This is why we recommend that you include this line at the top of each notebook workflow: if the platform is already set up then this import does nothing so there's no harm in including it and no penalty in importing multiple times if/when re-running the notebook from the top).",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_886098812",
+      "id": "paragraph_1650969130797_24418076",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4259"
+    },
+    {
+      "title": "Exporting data from the platform using ssh",
+      "text": "%md\n\nYou can export data from the platform via your Zeppelin account home directory, onto your local desktop. In order to do this you need to install your public ssh key on the system. The best way to do this is send us a copy of your public ssh key in a email and we will add it to the system in the correct location. If you are unsure how to find your public ssh key send us an email and we will talk you through it.\n\nTo transfer a file out of the system, copy the data file you wish to export into your /home or /user directory on the system,\nFor example:\n\n    %sh\n    echo \"my data\" > /user/{YOUR-USERNAME}/data.txt\n\nFrom your local machine you can now either ssh into Zeppelin e.g. from your own desktop / laptop\n\n    ssh {YOUR-USERNAME}@dmp.gaia.ac.uk\n    \nor you can copy your files from Zeppelin using scp e.g. from your local desktop (replace ‘data.txt’ with the name of the file you want to download, and /tmp/data with the path on your local desktop where you want to store it)\n\n    scp {YOUR-USERNAME}@dmp.gaia.ac.uk:/user/{YOUR-USERNAME}/data.txt /tmp/data\n    \nTo save in-memory data (for example as expressed in a results DataFrame) on the platform in a file for export, be aware that a Spark DataFrame is a distributed data set. If you save such an object to disk you will get a large set of partition files reflecting the natural distribution of the underlying source data. This is neither convenient nor particularly friendly. Provided the data size is not too large it is better to collect the distributed data to a non-distributed object on the master executor. The easiest way to do this is to call the \"toPandas\" method of the DataFrame, then this can be saved to a convenient format (e.g. comma-separated value). In the following simple example a DataFrame of the positions and magnitudes of all sources in the [Gaia Andromeda Photometric Survey (GAPS)](https://gea.esac.esa.int/archive/documentation/GDR3/Data_processing/chap_cu5pho/sec_cu5pho_gaps/) is created, collected to an intermediate non-distributed Pandas object, then saved to csv: ",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1120160856",
+      "id": "paragraph_1657184311088_165266130",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4260"
+    },
+    {
+      "title": "Saving a results file",
+      "text": "%pyspark\n\n# simple example of saving a results file to disk, e.g. prior to transfer off the platform to a user's local file system (see final paragraph in the description in the cell above)\n\n# standard set-up\nimport gaiadmpsetup\n\n# create an example data set - in this case a simple GAPS selection from gaia source\ndata_frame = spark.sql('SELECT ra, dec, parallax, parallax_error, phot_g_mean_mag, phot_bp_mean_mag, phot_rp_mean_mag FROM gaiadr3.gaia_source WHERE in_andromeda_survey')\n\n# collect results to Pandas and save to csv in the user's home directory - substitute your username as appropriate\n# data_frame.toPandas().to_csv(path_or_buf = '/user/{YOUR-USERNAME}/gapscat.csv', index = False)\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1897143524",
+      "id": "paragraph_1679926680774_2107620980",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4261"
+    },
+    {
+      "title": "Interpreters",
+      "text": "%md\n\n## Interpreters\n\nWe recommend usage of the PySpark interpreter since this gives access to large scale distributed computing via the data frame applications programming interface. Other Python interpreters are available however: for light, non-distributed processing of relatively small data sets collected to the driver process in Zeppelin it is possible to specify plain Python or IPython interpreters (the latter is perhaps more familiar to Jupyter notebook users). \n\nThere are some differences in functionality between the interpreters available - these are illustrated in the following cells.",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1850966498",
+      "id": "paragraph_1646303142140_1348941331",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4262"
+    },
+    {
+      "title": "Getting Python help (PySpark)",
+      "text": "%spark.pyspark\n\nimport sys\n\nhelp(sys)\n# ... available also in python.ipython interpreter",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1869201360",
+      "id": "paragraph_1646303435709_963866048",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4263"
+    },
+    {
+      "title": "Getting Python help (IPython)",
+      "text": "%python.ipython\n# ... this facility is not available in the pyspark interpreter\n\nimport sys\n\nsys?",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1934713790",
+      "id": "paragraph_1646307170102_2048767015",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4264"
+    },
+    {
+      "title": "IPython \"magic\" functions ",
+      "text": "%md\n\nAll the IPython magic functions are avalible in Zeppelin, here's one example of `%timeit`, for the complete IPython magic functions, you can check the [link](http://ipython.readthedocs.io/en/stable/interactive/magics.html) here.\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_959737115",
+      "id": "paragraph_1646307234243_505337054",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4265"
+    },
+    {
+      "text": "%python.ipython\n# ... available only in IPython interpreter\n\n%timeit range(1000)\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1641860212",
+      "id": "paragraph_1646307543255_98686055",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4266"
+    },
+    {
+      "text": "%md\n\n## Tab completion\n\nTab completion, especially for attributes, is a convenient way to explore the structure of any object you’re dealing with. Simply type `object_name.<TAB>` to view the object’s attributes. See the following screenshot illustrating how tab completion works in the IPython Interpreter; it will work also in the pyspark interpreter.\n![alt text](https://user-images.githubusercontent.com/164491/34858941-3f28105a-f78e-11e7-8341-2fbfd306ba5b.gif \"Logo Title Text 1\")\n\n\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_504074307",
+      "id": "paragraph_1646307566183_1091809645",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4267"
+    },
+    {
+      "text": "%md\n\n## Use of the ZeppelinContext \n\n`ZeppelinContext` is a utlity class which provide the following features\n\n* Dynamic forms\n* Show DataFrame via built-in visualisation\n\nThe ZeppelinContext is addressed via the pre-loaded object instance \"z.\" in IPython or PySpark interpreters.\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_712301556",
+      "id": "paragraph_1646307705484_968604156",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4268"
+    },
+    {
+      "title": "Dynamic input forms",
+      "text": "%python.ipython\n\n# dynamic form\nz.input(name='my_name', defaultValue='hello')",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {
+          "my_name": "hello"
+        },
+        "forms": {
+          "my_name": {
+            "type": "TextBox",
+            "name": "my_name",
+            "displayName": "my_name",
+            "defaultValue": "hello",
+            "hidden": false,
+            "$$hashKey": "object:4642"
+          }
+        }
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_788000311",
+      "id": "paragraph_1646307822435_755741075",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4269"
+    },
+    {
+      "title": "Data frame formatted table display",
+      "text": "%python.ipython\n\nimport pandas as pd\ndf = pd.DataFrame({'name':['a','b','c'], 'count':[12,24,18]})\n\n# visualise the data frame via the context built-in\nz.show(df)",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "name": "string",
+                      "count": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                }
+              },
+              "commonSetting": {}
+            }
+          }
+        },
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_859536607",
+      "id": "paragraph_1646307830074_1007432988",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4270"
+    },
+    {
+      "text": "%md\n\n## Visualisation options\n\nOne big advantage of notebooks is that you can visualise data with your within your code and mark-down cells. [Matplotlib](https://matplotlib.org) is the premier Python plotting module available on this platform and it works in much the same way as other familiar Python environments (but note that an explicit call to `show()` is not necessary - plot rendering is accomplished via a post-execute hook which tells Zeppelin to plot all currently open matplotlib figures after executing the rest of the paragraph). Saving a plot locally is as simple as calling the pyplot instance savefig() method (see above for instructions on transfering files off the platform).\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1299608965",
+      "id": "paragraph_1646307971292_1902566334",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4271"
+    },
+    {
+      "title": "Simple matplotlib example",
+      "text": "%pyspark\n\nimport matplotlib.pyplot as plt\n\nplt.plot([1,2,3,4])\nplt.ylabel('some numbers')\n\n# to save the plot file use the savefig method, substituting your username as appropriate:\n# plt.savefig('/user/{YOUR-USERNAME}/somenums.png')",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_821836219",
+      "id": "paragraph_1646308177030_478507557",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4272"
+    },
+    {
+      "title": "Plotting from multiple cells in matplotlib",
+      "text": "%md\n\nTo iteratively update a single plot, we can leverage Zeppelin's built-in Angular Display System. Currently this feature is only available for the `pyspark` interpreter for raster (png and jpg) formats. To enable this, we must set a special `angular` flag to `True` in our configuration:\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_325207001",
+      "id": "paragraph_1646309158350_1307021892",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4273"
+    },
+    {
+      "title": "First cell - this has the plot with the first line",
+      "text": "%pyspark\n\nimport matplotlib.pyplot as plt\nplt.close() # Added here to reset the plot when rerunning the paragraph\nz.configure_mpl(angular=True, close=False)\nplt.plot([1, 2, 3], label=r'$y=x$')\n\n# ... the following related cells are placed by the side of this one by adjusting their width via the cog icon in the top right of each.",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 7,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1032601700",
+      "id": "paragraph_1646318201620_778208712",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4274"
+    },
+    {
+      "title": "Second line",
+      "text": "%pyspark\n\nplt.plot([3, 2, 1], label=r'$y=3-x$')\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670549_1183310538",
+      "id": "paragraph_1646318348245_1365510701",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4275"
+    },
+    {
+      "title": "Label axes",
+      "text": "%pyspark\n\nplt.xlabel(r'$x$', fontsize=20)\nplt.ylabel(r'$y$', fontsize=20)",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_123160433",
+      "id": "paragraph_1646318526426_1207719830",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4276"
+    },
+    {
+      "title": "Add legend",
+      "text": "%pyspark\n\nplt.legend(loc='upper center', fontsize=20)",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_783943528",
+      "id": "paragraph_1646318572568_292771953",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4277"
+    },
+    {
+      "title": "Add title",
+      "text": "%pyspark\n\nplt.title('Inline plotting example', fontsize=20)",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "colWidth": 5,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_1197076340",
+      "id": "paragraph_1646318613401_1738257807",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4278"
+    },
+    {
+      "title": "Pandas and matplotlib",
+      "text": "%md\n\nPandas provides a high level api for visualisation of Pandas data frames. It uses matplotlib for its visualization under the hood, so the usage is the same as matplotlib. ",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "title": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_196267112",
+      "id": "paragraph_1646309301096_821170751",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4279"
+    },
+    {
+      "text": "%python.ipython\n\nimport pandas as pd\nimport numpy as np\n\nts = pd.Series(np.random.randn(1000), index=pd.date_range('1/1/2000', periods=1000))\nts = ts.cumsum()\nts.plot()",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionSupport": true,
+          "completionKey": "TAB"
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/python",
+        "fontSize": 9,
+        "editorHide": false,
+        "title": false,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_610488192",
+      "id": "paragraph_1646309408433_167804871",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4280"
+    },
+    {
+      "text": "%md\n\n## Pandas User Defined Functions (a.k.a. vectorized UDFs)\n\nA convenient feature of the PySpark SQL data frame API is the programmability afforded by user defined functions. Users who have found themselves limited by the small number of aggregate functions typically available in ADQL will find this feature particularly useful in scale-out usage scenarios. There are illustrations of the use of UDFs in the tutorial notebooks provided on this platform - see for example notebook 5, \"Working with Gaia XP spectra\". \n\nFor further details see the [Apache Spark documentation for Pandas UDFs](https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#pandas-udfs-a-k-a-vectorized-udfs).\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "tableHide": false,
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "editorHide": true,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_1573391098",
+      "id": "paragraph_1646309445411_598337612",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4281"
+    },
+    {
+      "text": "%md\n\n",
+      "user": "gaiauser",
+      "dateUpdated": "2024-03-06T10:41:10+0000",
+      "progress": 0,
+      "config": {
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "colWidth": 12,
+        "editorMode": "ace/mode/markdown",
+        "fontSize": 9,
+        "results": {},
+        "enabled": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "runtimeInfos": {},
+      "progressUpdateIntervalMs": 500,
+      "jobName": "paragraph_1709721670550_1432062911",
+      "id": "paragraph_1646324946148_1387147604",
+      "dateCreated": "2024-03-06T10:41:10+0000",
+      "status": "READY",
+      "$$hashKey": "object:4282"
+    }
+  ],
+  "name": "8. Tips and tricks",
+  "id": "2JTRXN45P",
+  "defaultInterpreterGroup": "spark",
+  "version": "0.11.0-gaia-dmp-0.1",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {},
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {},
+  "path": "/tmp/8. Tips and tricks"
+}
